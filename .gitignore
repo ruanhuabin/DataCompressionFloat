@@ -1,0 +1,7 @@
+*.txt
+*.log
+*.o
+tmp/
+hpos
+nhpos
+mrcviewer
