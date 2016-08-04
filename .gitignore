@@ -2,6 +2,10 @@
 *.log
 *.o
 *.swp
+bin/
+data/
+*_c
+*.bak
 lib/libutil.a
 lib/libcore.a
 tags

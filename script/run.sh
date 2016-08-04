@@ -17,8 +17,8 @@
 #      REVISION:  ---
 #===============================================================================
 timestamp=`date +%Y-%m-%d:%H:%M:%S`
-dimInfo="11522 5186 3"
-inputFileName="test_large.nc"
+dimInfo="1000 1000 32"
+inputFileName="data1000x1000x32.mrc"
 inputFilePrefix=`echo $inputFileName | cut -d . -f 1`
 inputFileSuffix=.`echo $inputFileName | cut -d . -f 2`
 #echo "inputFilePrefix = ${inputFilePrefix}, inputFileSuffix = ${inputFileSuffix}"
@@ -28,18 +28,18 @@ outputFile=ys_${inputFilePrefix}_${timestamp}${inputFileSuffix}
 echo "output file name: $outputFile"
 
 inputFilePath=../data/${inputFile}
-outputFilePath=./tmp/${outputFile}
+outputFilePath=../tmp/${outputFile}
 
 echo "input file path: ${inputFilePath} "
 echo "output file path: ${outputFilePath} "
 
 #run compression
-./hpos -oz $inputFilePath ${outputFilePath} ${dimInfo} 
+./hpos_c -oz $inputFilePath ${outputFilePath} ${dimInfo} 
 
 #sleep 1
 #run decompression
-jyOutputFilePath=tmp/jy_${inputFilePrefix}_${timestamp}${inputFileSuffix}
-./hpos -ou $outputFilePath ${jyOutputFilePath}
+jyOutputFilePath=../tmp/jy_${inputFilePrefix}_${timestamp}${inputFileSuffix}
+./hpos_c -ou $outputFilePath ${jyOutputFilePath}
 
 #sleep 1
 diff ${inputFilePath} ${jyOutputFilePath}
