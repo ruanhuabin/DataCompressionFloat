@@ -1,27 +1,31 @@
-zlib=/opt/zlib1.2.3/
-CC=gcc
-CFLAGS=-Wall -I${zlib}/include/
-#LDFLAGS=-L${zlib}/lib/ -lz
-LIBS=${zlib}/lib/libz.a
-SOURCES=lz4.c lz4hc.c nzips.c common.c workers.c hpos.c
-OBJECTS=$(SOURCES:.c=.o)
-EXECUTABLE=hpos nhpos mrcviewer
+include Makefile.inc
 
-all: $(SOURCES) $(EXECUTABLE)
-	
-#$(EXECUTABLE): $(OBJECTS) 
-#	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+BIN_DIR := bin
+OBJ_DIR := obj 
+UTIL_TARGET := util_tool
+CORE_TARGET := core_tool
+TOOL_TARGET := build_tool
+MAIN_TARGET := main
 
-hpos: nzips.o lz4.o lz4hc.o common.o workers.o hpos.c
-	$(CC) $(LDFLAGS) -g nzips.o lz4.o lz4hc.o common.o workers.o hpos.c ${LIBS} -o hpos 
-
-nhpos: nzips.o lz4.o lz4hc.o common.o workers.o adapt.o main.c
-	$(CC) $(LDFLAGS) -g nzips.o lz4.o lz4hc.o common.o workers.o adapt.o main.c ${LIBS} -lpthread -o nhpos 
-mrcviewer:mrcviewer.c
-	$(CC) -std=gnu99 -o mrcviewer mrcviewer.c
-.o:
-	$(CC) $(CFLAGS) $< -o $@
-
-
+#$(BIN_DIR)不能直接用字符串代替，否则每次make的时候都会执行字符串对应的规则，即使bin目录已经存在了
+all:$(BIN_DIR) $(OBJ_DIR) $(UTIL_TARGET) $(CORE_TARGET) $(TOOL_TARGET) $(MAIN_TARGET) 
+vpath % bin
+$(BIN_DIR):
+	if [ ! -d "./$(BIN_DIR)" ]; then \
+		mkdir $(BIN_DIR);\
+	fi
+$(OBJ_DIR):
+	if [ ! -d "./$(OBJ_DIR)" ]; then \
+		mkdir $(OBJ_DIR);\
+	fi
+$(UTIL_TARGET):
+	cd src/util && make
+$(CORE_TARGET):
+	cd src/core && make
+$(TOOL_TARGET):
+	cd src/tool && make
+$(MAIN_TARGET):
+	cd src/main && make
+.phony:clean
 clean:
-	rm -rf *.o hpos nhpos
+	rm -rf $(BIN_DIR) $(OBJ_DIR) lib/libcore.a lib/libutil.a 
