@@ -16,9 +16,10 @@
 #       CREATED: 2016年08月04日 14时55分37秒 CST
 #      REVISION:  ---
 #===============================================================================
+app=./simple_compress_c
 timestamp=`date +%Y-%m-%d:%H:%M:%S`
 dimInfo="1000 1000 32"
-inputFileName="data32x1000x1000x116-123.mrc"
+inputFileName="data1000x1000x32.mrc"
 inputFilePrefix=`echo $inputFileName | cut -d . -f 1`
 inputFileSuffix=.`echo $inputFileName | cut -d . -f 2`
 #echo "inputFilePrefix = ${inputFilePrefix}, inputFileSuffix = ${inputFileSuffix}"
@@ -34,12 +35,12 @@ echo "input file path: ${inputFilePath} "
 echo "output file path: ${outputFilePath} "
 
 #run compression
-./hpos_c -oz $inputFilePath ${outputFilePath} ${dimInfo} 
+${app} -oz $inputFilePath ${outputFilePath} ${dimInfo} 
 
 #sleep 1
 #run decompression
 jyOutputFilePath=../tmp/jy_${inputFilePrefix}_${timestamp}${inputFileSuffix}
-./hpos_c -ou $outputFilePath ${jyOutputFilePath}
+${app} -ou $outputFilePath ${jyOutputFilePath}
 
 #sleep 1
 diff ${inputFilePath} ${jyOutputFilePath}

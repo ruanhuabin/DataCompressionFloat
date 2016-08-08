@@ -16,7 +16,7 @@ CC := gcc
 AR := ar
 OPT_LEVEL = -O2 
 DEBUG_FLAG = -g
-LIBS := -lutil -lcore -lz -lpthread
+LIBS := -lutil -lcore -lz -lpthread -lm
 #LIBS := -lutil -lcore $(FINAL_MODULE_LIBS)
 CFLAGS := -Wall -std=gnu99 ${OPT_LEVEL} ${DEBUG_FLAG}
 ARFLAGS := -rcs 
