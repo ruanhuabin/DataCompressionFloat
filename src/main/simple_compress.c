@@ -33,44 +33,37 @@
 #define XOR_EQUAL(a,b) (((a)^(b)) < 1)
 #define XOR_PEQUAL(a,b) (((a)^(b)) < (1<<16))
 
-static int simple_compress(FILE *inputFile, const char *outputFile, ctx_t *ctx)
+
+int mrc_compress(const char *src, const char *dst)
 {
-    FILE *fout;
-    fout = fopen(outputFile, "wb");
+	FILE *fin = fopen(src, "rb");
 
-    if(fout == NULL)
-    {
-        fprintf(stderr, "Error: [%s:%d]: Failed to open file [%s] to write\n", __FILE__, __LINE__, outputFile);
-        exit(-1);
-    }
+	if (fin == NULL) {
+		fprintf(stderr, "Error: [%s:%d]: Failed to  open input file :%s\n",
+				__FILE__, __LINE__, src);
+		exit(-1);
+	}
 
-    compress_0(inputFile, ctx, fout);
+	FILE *fout;
+	fout = fopen(dst, "wb");
 
-    fclose(fout);
+	if (fout == NULL) {
+		fprintf(stderr, "Error: [%s:%d]: Failed to open output file [%s] to write\n",
+				__FILE__, __LINE__, dst);
+		exit(-1);
+	}
 
-    return 0;
-}
-
-
-int mrc_compress(const char *src, const char *dst, unsigned dims[])
-{
-    FILE *fin;
     ctx_t ctx;
-    if((fin = fopen(src, "rb")) == NULL)
-    {
-        fprintf(stderr, "Error: [%s:%d]: Failed to  open input file :%s\n", __FILE__, __LINE__, src);
-        exit(-1);
-    }
-
     ctx_init(&ctx);
 
     ctx.fnum += 1;
     ctx.fsz += fsize_fp(fin);
-    simple_compress(fin, dst, &ctx);
+    compress_0(fin, &ctx, fout);
 
     ctx_print_more(&ctx, "Deflated");
 
     fclose(fin);
+    fclose(fout);
     return 0;
 }
 
@@ -126,12 +119,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        unsigned dims[3] = {0};
-        dims[0] = atol(argv[4]);
-        dims[1] = atol(argv[5]);
-        dims[2] = atol(argv[6]);
-
-        mrc_compress(inputFile, outputFile, dims);
+        mrc_compress(inputFile, outputFile);
     }
     return 0;
 }

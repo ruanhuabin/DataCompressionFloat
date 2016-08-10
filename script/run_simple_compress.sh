@@ -16,7 +16,8 @@
 #       CREATED: 2016年08月04日 14时55分37秒 CST
 #      REVISION:  ---
 #===============================================================================
-app=./simple_compress_c
+projectRoot=/root/datacompression/DataCompressionFloat
+app=$projectRoot/script/simple_compress_c
 timestamp=`date +%Y-%m-%d:%H:%M:%S`
 dimInfo="1000 1000 32"
 inputFileName="data1000x1000x32.mrc"
@@ -28,8 +29,8 @@ inputFile=$inputFilePrefix$inputFileSuffix
 outputFile=ys_${inputFilePrefix}_${timestamp}${inputFileSuffix}
 echo "output file name: $outputFile"
 
-inputFilePath=../data/${inputFile}
-outputFilePath=../tmp/${outputFile}
+inputFilePath=$projectRoot/data/${inputFile}
+outputFilePath=$projectRoot/tmp/${outputFile}
 
 echo "input file path: ${inputFilePath} "
 echo "output file path: ${outputFilePath} "
@@ -39,7 +40,7 @@ ${app} -oz $inputFilePath ${outputFilePath} ${dimInfo}
 
 #sleep 1
 #run decompression
-jyOutputFilePath=../tmp/jy_${inputFilePrefix}_${timestamp}${inputFileSuffix}
+jyOutputFilePath=$projectRoot/tmp/jy_${inputFilePrefix}_${timestamp}${inputFileSuffix}
 ${app} -ou $outputFilePath ${jyOutputFilePath}
 
 #sleep 1
