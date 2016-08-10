@@ -108,7 +108,7 @@ void printNumDetail(const char *binResult)
 
     float floatNum = pow2i(expResult - 127) * mantisaResult;
     floatNum = strcmp(sign, "+") == 0 ? floatNum:floatNum * (-1.0);
-   printf("%s 2^%d x %f = %d * %f = %f\n", sign, expResult - 127, mantisaResult, pow2i(expResult - 127), mantisaResult, floatNum); 
+   printf("Float Format: %s 2^%d x %f = %d * %f = %f\n", sign, expResult - 127, mantisaResult, pow2i(expResult - 127), mantisaResult, floatNum); 
 }
 int main ( int argc, char *argv[] )
 { 
