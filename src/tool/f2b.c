@@ -65,7 +65,7 @@ void f2b(float *num, int n, char **bitRepr)
     int index = 0;
     for(int i = 0; i < n; i ++)
     {
-        byte = &num[i];
+        byte = (char *)&num[i];
         for(int j = 3; j >= 0; j --)
         {
             index = (int)(byte[j]&0xff);

@@ -71,8 +71,8 @@ typedef struct _context_t {
   uint64_t fsz;
   uint64_t zfsz;
 
-  double time1; //zip ztime;
-  double time2; //unzip uztime;
+  double zipTime; //zip ztime;
+  double unzipTime; //unzip uztime;
 } ctx_t;
 
 void ctx_init(ctx_t *ctx);

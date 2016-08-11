@@ -17,7 +17,7 @@ extern "C" {
 
 
 /* --- no predition, no steady points --- */
-int compress_0(FILE *fin, ctx_t *ctx, FILE *fout);
+int runCompress(FILE *fin, ctx_t *ctx, FILE *fout);
 int uncompress_0(FILE *fin, ctx_t *ctx, nz_header *hd, FILE *fout);
 
 /* --- with predition, no steady points --- */

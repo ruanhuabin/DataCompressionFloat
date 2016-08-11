@@ -85,7 +85,7 @@ int learn(FILE *fin,
 
   get_sample(dims, &offset, &len);
   buf = (float*)malloc(len*step*sizeof(float));
-  ctx->time1 += (now_sec() - begin);
+  ctx->zipTime += (now_sec() - begin);
 
   fseek(fin, offset*step*sizeof(float), SEEK_SET);
   fread(buf, sizeof(float), len*step, fin);
@@ -135,7 +135,7 @@ int learn(FILE *fin,
   free(buf);
   front_reset(front);
 
-  ctx->time1 += (now_sec() - begin);
+  ctx->zipTime += (now_sec() - begin);
 
   fseek(fin, 0, SEEK_SET);
   return 0;
@@ -161,7 +161,7 @@ int my_compress(ctx_t *ctx, map_t *map, front_t *front,
   {
     case 0:
       //printf("no prediction, no steady\n");
-      compress_0(fin, ctx, fout);
+      runCompress(fin, ctx, fout);
       break;
     case 1:
       //printf("with prediction:%s, but no steady\n", 
@@ -491,6 +491,8 @@ int fnames_next(fnames_t *fnames, int *idx)
   {
     *idx = -1;
   }
+
+  printf("======>fnames->idx = %d, fnames->size = %d, idx = %d\n", fnames->idx, fnames->size, *idx);
   pthread_mutex_unlock(&fnames->lock);
 
   return *idx;

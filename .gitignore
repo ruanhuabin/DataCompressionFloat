@@ -2,6 +2,7 @@
 *.log
 *.o
 *.swp
+*.swo
 bin/
 data/
 *_c

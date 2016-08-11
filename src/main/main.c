@@ -145,7 +145,7 @@ void *dual_worker(void *arg)
     sprintf(tmpfname, "%s.uz", fnames->dsts[jdx]);
     nz_uncompress(&ctx2, fnames->dsts[jdx], tmpfname);
 
-    ctx1.time2 = ctx2.time2;
+    ctx1.unzipTime = ctx2.unzipTime;
     //print the speeds for current file
     ctx_print(&ctx1);
 
@@ -229,6 +229,7 @@ int start_job(int argc, char *argv[], int jtype)
     fnames_init(&fnames, argv[2], argv[3], "uz");
   else
     fnames_init(&fnames, argv[2], argv[3], "nz");
+
   fnames_print(&fnames);
 
   gettimeofday(&tim, NULL);

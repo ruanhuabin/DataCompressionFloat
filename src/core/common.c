@@ -118,8 +118,8 @@ void ctx_init(ctx_t *ctx)
     ctx->fnum = 0;
     ctx->fsz = 0;
     ctx->zfsz = 0;
-    ctx->time1 = 0.0;
-    ctx->time2 = 0.0;
+    ctx->zipTime = 0.0;
+    ctx->unzipTime = 0.0;
 }
 
 void ctx_reset(ctx_t *ctx)
@@ -127,8 +127,8 @@ void ctx_reset(ctx_t *ctx)
     ctx->fnum = 0;
     ctx->fsz = 0;
     ctx->zfsz = 0;
-    ctx->time1 = 0.0;
-    ctx->time2 = 0.0;
+    ctx->zipTime = 0.0;
+    ctx->unzipTime = 0.0;
 }
 
 void ctx_print(ctx_t *ctx)
@@ -139,13 +139,13 @@ void ctx_print(ctx_t *ctx)
             ctx->fsz, ctx->zfsz,
             (double)ctx->zfsz/ctx->fsz);
 
-    if(ctx->time1 > 0.001)
-        printf("\t[%.2f", ctx->fsz/(m*ctx->time1));
+    if(ctx->zipTime > 0.001)
+        printf("\t[%.2f", ctx->fsz/(m*ctx->zipTime));
     else
         printf("\t[%.2f", 0.0);
 
-    if(ctx->time2 > 0.001)
-        printf("\t%.2f]", ctx->fsz/(m*ctx->time2));
+    if(ctx->unzipTime > 0.001)
+        printf("\t%.2f]", ctx->fsz/(m*ctx->unzipTime));
     else
         printf("\t%.2f]", 0.0);
 
@@ -164,8 +164,8 @@ void ctx_add(ctx_t *dst, ctx_t *src)
     dst->fnum += src->fnum;
     dst->fsz += src->fsz;
     dst->zfsz += src->zfsz;
-    dst->time1 += src->time1;
-    dst->time2 += src->time2;
+    dst->zipTime += src->zipTime;
+    dst->unzipTime += src->unzipTime;
 }
 
 /* ------------------ map -------------------*/

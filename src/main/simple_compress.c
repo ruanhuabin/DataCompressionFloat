@@ -58,7 +58,8 @@ int mrc_compress(const char *src, const char *dst)
 
     ctx.fnum += 1;
     ctx.fsz += fsize_fp(fin);
-    compress_0(fin, &ctx, fout);
+
+    runCompress(fin, &ctx, fout);
 
     ctx_print_more(&ctx, "Deflated");
 
@@ -91,7 +92,6 @@ int mrc_uncompress(const char *src, const char *dst)
     nz_header_print(&hd);
     uncompress_0(fin, &ctx, &hd, fout);
     ctx_print_more(&ctx, "Decompress");
-    nz_header_term(&hd);
     fclose(fout);
     fclose(fin);
     return 0;
