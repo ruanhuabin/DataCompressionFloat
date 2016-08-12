@@ -1121,6 +1121,73 @@ void _convert0(const float *buf,
     }
 }
 
+void splitFloats(const float *buf, int num, char *zins[], const int compressPrecision)
+{
+    int i;
+    char *p0, *p1, *p2, *p3;
+    char *p = (char*)buf;
+
+    p0 = zins[0];
+    p1 = zins[1];
+    p2 = zins[2];
+    p3 = zins[3];
+    for(i = 0; i < num; i ++)
+    {
+        switch(compressPrecision)
+        {
+            case 0:
+                *p0++ = *p++;
+                *p1++ = *p++;
+                *p2++ = *p++;
+                *p3++ = *p++;
+                break;
+            case 1:
+                *p0 = '\0';
+                p0 ++;
+                p ++;
+                *p1++ = *p++;
+                *p2++ = *p++;
+                *p3++ = *p++;
+                break;
+            case 2:
+                *p0 = '\0';
+                p0 ++;
+                p  ++;
+                *p1 = '\0';
+                p ++;
+                *p2++ = *p++;
+                *p3++ = *p++;
+                break;
+            case 3:
+                *p0 = '\0';
+                p0 ++;
+                p  ++;
+                *p1 = '\0';
+                p ++;
+                *p2 = '\0';
+                p ++;
+                *p3++ = *p++;
+                break;
+            case 4:
+                *p0 = '\0';
+                p0 ++;
+                p  ++;
+                *p1 = '\0';
+                p ++;
+                *p2 = '\0';
+                p ++;
+                *p3 = '\0';
+                p ++;
+                break;
+            default:
+                *p0++ = *p++;
+                *p1++ = *p++;
+                *p2++ = *p++;
+                *p3++ = *p++;
+                break;
+        }
+    }
+}
 void _unconvert0(float *buf,
         int num,
         char *zouts[])
@@ -1214,7 +1281,7 @@ int runDecompression(FILE *fin,
 }
 
 
-int runCompress(FILE *fin, ctx_t *ctx, FILE *fout)
+int runCompress(FILE *fin, ctx_t *ctx, FILE *fout, const int compressPrecision)
 {
     int j;
     int num, chk;
@@ -1281,7 +1348,10 @@ int runCompress(FILE *fin, ctx_t *ctx, FILE *fout)
     {
 
         begin = now_sec();
-        _convert0(buf, num, zins);
+        /*
+         *_convert0(buf, num, zins);
+         */
+        splitFloats(buf, num, zins, compressPrecision);
         ctx->zipTime += (now_sec() - begin);
 
         

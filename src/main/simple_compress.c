@@ -34,7 +34,7 @@
 #define XOR_PEQUAL(a,b) (((a)^(b)) < (1<<16))
 
 
-int mrc_compress(const char *src, const char *dst)
+int mrc_compress(const char *src, const char *dst, const int compressPrecision)
 {
 	FILE *fin = fopen(src, "rb");
 
@@ -59,7 +59,7 @@ int mrc_compress(const char *src, const char *dst)
     ctx.fnum += 1;
     ctx.fsz += fsize_fp(fin);
 
-    runCompress(fin, &ctx, fout);
+    runCompress(fin, &ctx, fout, compressPrecision);
 
     ctx_print_more(&ctx, "Deflated");
 
@@ -105,14 +105,21 @@ int main(int argc, char *argv[])
     printf("ZLIB:%s\n", zlib_version);
     if(argc < 4)
     {
-        printf("Usage: %s -oz <infile> <outfile> <nx> <ny> <nz> [nt]\n", argv[0]);
-        printf("Usage: %s -ou <infile> <outfile>\n", argv[0]);
+        printf("Usage: %s -oz <infile> <outfile> [-cp [compress precision] \n", argv[0]);
+        printf("Usage: %s -ou <infile> <outfile> [-cp 1]\n", argv[0]);
         return -1;
     }
 
     char *inputFile  = argv[2];
     char *outputFile = argv[3];
     
+    int compressPrecision = 0;
+    if(argc == 6)
+    {
+        compressPrecision = atoi(argv[5]);
+    }
+
+    printf("Compress Precision = %d\n", compressPrecision);
     /**
      *  Just do uncompress
      */
@@ -122,7 +129,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        mrc_compress(inputFile, outputFile);
+        mrc_compress(inputFile, outputFile, compressPrecision);
     }
     return 0;
 }

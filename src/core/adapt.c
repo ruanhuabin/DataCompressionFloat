@@ -161,7 +161,7 @@ int my_compress(ctx_t *ctx, map_t *map, front_t *front,
   {
     case 0:
       //printf("no prediction, no steady\n");
-      runCompress(fin, ctx, fout);
+      runCompress(fin, ctx, fout, 0);
       break;
     case 1:
       //printf("with prediction:%s, but no steady\n", 

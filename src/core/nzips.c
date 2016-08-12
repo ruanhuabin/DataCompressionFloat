@@ -172,6 +172,10 @@ int mzlib_def(mzip_t *zip, char **p, int *len)
   strm->next_out = (unsigned char*)zip->zout;
   strm->avail_out = zip->chk;
 
+
+  /**
+   *  The Z_FULL_FLUSH May need to change to Z_NO_FLUSH or Z_FINISH for optimization
+   */
   deflate(strm, Z_FULL_FLUSH);
 
   *len = zip->chk - strm->avail_out;

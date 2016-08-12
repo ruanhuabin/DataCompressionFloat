@@ -17,9 +17,9 @@
 #      REVISION:  ---
 #===============================================================================
 projectRoot=/root/datacompression/DataCompressionFloat
+compressPrecision=2
 app=$projectRoot/script/simple_compress_c
 timestamp=`date +%Y-%m-%d:%H:%M:%S`
-dimInfo="1000 1000 32"
 inputFileName="data1000x1000x32.mrc"
 inputFilePrefix=`echo $inputFileName | cut -d . -f 1`
 inputFileSuffix=.`echo $inputFileName | cut -d . -f 2`
@@ -36,19 +36,6 @@ echo "input file path: ${inputFilePath} "
 echo "output file path: ${outputFilePath} "
 
 #run compression
-${app} -oz $inputFilePath ${outputFilePath} ${dimInfo} 
+${app} -oz $inputFilePath ${outputFilePath} -cp $compressPrecision
 
-#sleep 1
-#run decompression
-jyOutputFilePath=$projectRoot/tmp/jy_${inputFilePrefix}_${timestamp}${inputFileSuffix}
-${app} -ou $outputFilePath ${jyOutputFilePath}
-
-#sleep 1
-diff ${inputFilePath} ${jyOutputFilePath}
-if [ $? -eq 0 ]
-then
-    echo "Comparing result is correct "
-else
-    echo "Comparing result is wrong!!!"
-fi
 
