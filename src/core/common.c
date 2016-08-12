@@ -131,6 +131,39 @@ void ctx_reset(ctx_t *ctx)
     ctx->unzipTime = 0.0;
 }
 
+void displayContext(ctx_t *ctx, const char *hintMsg)
+{
+    const char *firstColumHeader = "[Original File Size(Bytes)]    ";
+    const char *secondColumHeader = "[Compressed File Size(Bytes)]    ";
+    const char *thirdColumHeader = "[Zip/Unzip Time(s)]    ";
+    const char *fourthColumHeader = "[Speed(MB/s)]    ";
+
+    int firstColumnLen = strlen(firstColumHeader);
+    int secondColumnLen = strlen(secondColumHeader);
+    int thirdColumnLen = strlen(thirdColumHeader);
+    int fourthColumnLen = strlen(fourthColumHeader);
+
+    printf("-------------------%s--------------------\n", hintMsg);
+    printf("%s%s%s%s\n", firstColumHeader, secondColumHeader, thirdColumHeader, fourthColumHeader);
+
+    double zipTime = ctx->zipTime;
+    double unzipTime = ctx->unzipTime;
+    double time = zipTime > 0.001 ? zipTime:unzipTime;
+    
+    uint64_t fileSize = ctx->fsz;
+
+    double speed = fileSize / (time * 1024.0 * 1024.0);
+
+    const char * operation = zipTime > 0.001 ? "(zip)" : "(unzip)";
+
+    char timeInfo[128];
+    memset(timeInfo, '\0', sizeof(timeInfo));
+
+    sprintf(timeInfo, "%.4f%s",time, operation );
+
+    printf("%-*ld%-*ld%-*s%-*.*f\n", firstColumnLen, ctx->fsz, secondColumnLen, ctx->zfsz, thirdColumnLen, timeInfo, fourthColumnLen, 4, speed);
+}
+
 void ctx_print(ctx_t *ctx)
 {
     double m = 1024*1024.0;
@@ -455,6 +488,31 @@ void nz_header_print(nz_header *hd)
                 hd->map->dx, hd->map->dy,
                 hd->map->zcnt);
     }
+}
+void displayHeader(nz_header *hd, const char *hintMsg)
+{
+
+    printf("[%s]: Original file size = %ld, chunk size = %ld, compresstion type = %d\n", hintMsg, hd->fsz, hd->chk, hd->type);
+}
+
+int readHeader(FILE *fin, nz_header *hd)
+{
+    int i;
+    map_t *map = hd->map;
+
+    if(fread(&(hd->fsz), sizeof(uint64_t), 1, fin) < 1)
+    {
+        fprintf(stderr, "[ERROR]:Failed to read file\n");
+        return -1;
+    }
+    fread(&(hd->chk), sizeof(uint32_t), 1, fin);
+    fread(&(hd->type), sizeof(char), 1, fin);
+    for(i=0; i<5; i ++)
+    {
+        fread(&(hd->ztypes[i]), sizeof(char), 1, fin);
+    }
+
+    return 0;
 }
 
 int nz_header_read(FILE *fin, nz_header *hd)

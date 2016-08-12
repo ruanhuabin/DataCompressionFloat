@@ -88,10 +88,13 @@ int mrc_uncompress(const char *src, const char *dst)
     ctx.fnum += 1;
     nz_header_init(&hd, 0);
     hd.map = &map;
-    nz_header_read(fin, &hd);
-    nz_header_print(&hd);
-    uncompress_0(fin, &ctx, &hd, fout);
-    ctx_print_more(&ctx, "Decompress");
+    readHeader(fin, &hd);
+    displayHeader(&hd, "Header Info in Decompression");
+    runDecompression(fin, &ctx, &hd, fout);
+    displayContext(&ctx, "Contex Info after Decompression");
+    /*
+     *ctx_print_more(&ctx, "Decompress");
+     */
     fclose(fout);
     fclose(fin);
     return 0;

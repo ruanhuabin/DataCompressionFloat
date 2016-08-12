@@ -109,6 +109,7 @@ void statis_time(mzip_t *zip, uint64_t chk, double begin, double end);
 
 void print_result(mzip_t *zip);
 void print_results(mzip_t *zips, int n);
+void display_results(mzip_t *zips, int n, const char *hintMsg);
 
 #define TAG {printf("%s:%d\n", __FILE__,  __LINE__);}
 

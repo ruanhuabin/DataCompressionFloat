@@ -117,6 +117,33 @@ unsigned float_xor4(float real, float pred);
 
 double now_sec();
 uint64_t fsize_fp(FILE *fp);
+
+
+
+
+/**
+ *  Following function is added by ruanhuabin
+ */
+
+
+
+/**
+ *  Use to replace nz_header_read
+ */
+int readHeader(FILE *fin, nz_header *hd);
+
+/**
+ *  Use to replace nz_header_print
+ */
+void displayHeader(nz_header *hd, const char *hintMsg);
+
+
+
+
+/**
+ *  Use to replace ctx_print
+ */
+void displayContext(ctx_t *ctx, const char *hintMsg);
 #define TAG {printf("%s:%d\n", __FILE__,  __LINE__);}
 
 #define _OUTPUT_ZIP_ (1)

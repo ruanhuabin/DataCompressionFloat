@@ -275,7 +275,7 @@ int nz_uncompress(ctx_t *ctx,
   {
     case 0:
       printf("no prediction, no steady\n");
-      uncompress_0(fin, ctx, &hd, fout);
+      runDecompression(fin, ctx, &hd, fout);
       break;
     case 1:
       printf("with prediction:%s, but no steady\n", 

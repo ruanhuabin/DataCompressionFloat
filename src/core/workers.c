@@ -1144,7 +1144,7 @@ void _unconvert0(float *buf,
 }
 
 
-int uncompress_0(FILE *fin,
+int runDecompression(FILE *fin,
         ctx_t *ctx,
         nz_header *hd,
         FILE *fout)
@@ -1198,10 +1198,10 @@ int uncompress_0(FILE *fin,
 
     free(buf);
 
-#ifdef _PRINT_ZIPS_
-    print_results(zips, 4);
-#endif
 
+#ifdef _PRINT_ZIPS_
+    displayResults(zips, 4, "Decompress");
+#endif
     for(j = 0; j < 4; j++)
     {
         ctx->fsz += zips[j].fsz;
@@ -1260,7 +1260,15 @@ int runCompress(FILE *fin, ctx_t *ctx, FILE *fout)
 
 
     /**
-     *  We have data need to be compressed, so we need to write the header in the output zip file
+     *  if we have  data need to be compressed, we will firstly write header into zip file, the zip file format is defined as following:
+     *  8 bytes: original file size
+     *  4 bytes: pre-defined chunk size
+     *  1 byte: compressed type,like compress_0,compress_1, compress_2, compress_3
+     *  5 bytes: compress method, like ZLIB_DEF, LZ4_DEF, LZ4HC_DEF，  for each byte stream
+     *  N bytes compress data organized as compressed chunk list:
+     *      each compressed chunk is organized as following:
+     *          16 bytes chunk header: every 4 bytes indicate the length of each                    compressed byte stream
+     *          4 compressed byte stream data: first compressed stream data is the first byte data in the incomming float number sequence, second compressed stream data is the second byte data in the incomming float number sequence, ...
      */
     if(num > 0)
     {
@@ -1321,11 +1329,19 @@ int runCompress(FILE *fin, ctx_t *ctx, FILE *fout)
         ctx->zipTime += (now_sec() - begin);
 
 #ifdef _OUTPUT_ZIP_
+
+        /**
+         * The first 4 bytes data in zouts[j][0..3] is the length of each compressed byte stream, we extracted from zouts[0..3] respectly, and write the the header of each compress blocked  
+         */
         for(j = 0; j < 4; j ++)
-            memcpy(bhd+j*HDR_SIZE, zouts[j], HDR_SIZE);
+            memcpy(bhd+j * HDR_SIZE, zouts[j], HDR_SIZE);
 
         fwrite(bhd, 1, 4 * HDR_SIZE, fout);
 
+
+        /**
+         *  Write the compressed data of each chunk to the zip file, the start position of each compressed byte stream is from zouts[j] + HDR_SIZE, where HDR_SIZe = 4
+         */
         for(j = 0; j < 4; j++)
             fwrite(zouts[j]+HDR_SIZE, 1, zlens[j] - HDR_SIZE, fout);
 #endif
@@ -1336,13 +1352,17 @@ int runCompress(FILE *fin, ctx_t *ctx, FILE *fout)
     free(buf);
 
 #ifdef _PRINT_ZIPS_
-    print_results(zips, 4);
+    displayResults(zips, 4, "Compression");
 #endif
 
-    for(j = 0; j < 4; j++)
+
+    /**
+     *  ctx->zfsz stored  the sum of the length of each compressed byte stream
+     */
+    for(j = 0; j < 4; j ++)
         ctx->zfsz += zips[j].zfsz;
 
-    for(j = 0; j < 4; j++)
+    for(j = 0; j < 4; j ++)
         mzip_term(&zips[j]);
     return 0;
 }

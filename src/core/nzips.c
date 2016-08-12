@@ -595,7 +595,7 @@ void split_float(const char *buf, int len, char *out[])
   p2 = out[2];
   p3 = out[3];
 
-  for(i=0; i<len; i++)
+  for(i = 0; i < len; i ++)
   {
     *p0 ++ = *buf++;
     *p1 ++ = *buf++;
@@ -614,7 +614,7 @@ void merge_float(char *buf, int len, char **in)
   p2 = in[2];
   p3 = in[3];
 
-  for(i=0; i<len; i++)
+  for(i = 0; i < len; i ++)
   {
     *buf ++ = *p0 ++;
     *buf ++ = *p1 ++;
@@ -648,7 +648,7 @@ int mzip_def_array(mzip_t zips[],
   buf = malloc(sizeof(float)*chk);
 
   fhd.fsize = fsize_fp(fin)/4;
-  for(j=0; j<4; j++)
+  for(j = 0; j < 4; j ++)
   {
     assign_fheader(&zips[j], &fhd);
     write_fheader(fout, &fhd);
@@ -662,7 +662,7 @@ int mzip_def_array(mzip_t zips[],
     begin = now_sec();
     split_float(buf, step, tmp);
 
-    for(j=0; j<4; j++)
+    for(j = 0; j < 4; j ++)
     {
       zips[j].inlen = step;
       zips[j].zipfun(&(zips[j]), &out[j], &len[j]);
@@ -670,7 +670,7 @@ int mzip_def_array(mzip_t zips[],
 
     zips[0].time1 += (now_sec() - begin);
 
-    for(j=0; j<4; j++)
+    for(j = 0; j < 4; j ++)
     {
       fwrite(out[j], 1, len[j], fout);
     }
@@ -711,7 +711,7 @@ int mzip_inf_array(mzip_t *zips,
   chk = zips[0].chk;
   buf = malloc(sizeof(float)*chk);
 
-  for(j=0; j<4; j++)
+  for(j = 0; j < 4; j ++)
   {
     read_fheader(fin, &fhd, NULL);
     check_fheader(&zips[j], &fhd);
@@ -720,7 +720,7 @@ int mzip_inf_array(mzip_t *zips,
   chk_num = fhd.fsize / fhd.chk;
   for(i=0, len=chk; i<chk_num; i++)
   {
-    for(j=0; j<4; j++)
+    for(j = 0; j < 4; j ++)
     {
       fread(bhd, 1, HDR_SIZE, fin);
       unpack_header(bhd, &(btypes[j]), &(zips[j].inlen));
@@ -728,7 +728,7 @@ int mzip_inf_array(mzip_t *zips,
     }
 
     begin = now_sec();
-    for(j=0; j<4; j++)
+    for(j = 0; j < 4; j ++)
     {
       zips[j].unzipfun(&(zips[j]), btypes[j], len, &out[j]);
     }
@@ -741,7 +741,7 @@ int mzip_inf_array(mzip_t *zips,
   len = fhd.fsize % fhd.chk;
   if(len > 0)
   {
-    for(j=0; j<4; j++)
+    for(j = 0; j < 4; j ++)
     {
       fread(bhd, 1, HDR_SIZE, fin);
       unpack_header(bhd, &(btypes[j]), &(zips[j].inlen));
@@ -749,7 +749,7 @@ int mzip_inf_array(mzip_t *zips,
     }
 
     begin = now_sec();
-    for(j=0; j<4; j++)
+    for(j = 0; j < 4; j ++)
     {
       zips[j].unzipfun(&(zips[j]), btypes[j], len, &out[j]);
     }
@@ -832,40 +832,136 @@ void print_result(mzip_t *zip)
 void print_results(mzip_t *zips, int n)
 {
   int i;
-  double m = 1024*1024.0;
+  double m;
   uint64_t fsz, zfsz;
-  double ztime, uztime;
+  double zipTime, unzipTime;
 
-  fsz = 0.0;
-  zfsz = 0.0;
-  ztime = 0.0;
-  uztime = 0.0;
-  printf("-------------------results--------------\n");
-  for(i=0; i<n; i++)
+  fsz    = 0.0;
+  zfsz   = 0.0;
+  zipTime  = 0.0;
+  unzipTime = 0.0;
+  m      = 1024.0 * 1024.0;
+  printf("-------------------Compress Information--------------\n");
+
+  const char *firstColumnHeader = "[ByteStreamIndex]   ";
+  const char *secondColumnHeader = "[Before Compress(Bytes)]   ";
+  const char *thirdColumnHeader = "[After Compress(Bytes)]   ";
+  const char *fourthColumnHeader = "[Compress Ratio]   ";
+  printf("%s%s%s%s\n",firstColumnHeader, secondColumnHeader, thirdColumnHeader,fourthColumnHeader);
+
+  int firstColumnLen = strlen(firstColumnHeader);
+  int secondColumnLen = strlen(secondColumnHeader);
+  int thirdColumnLen = strlen(thirdColumnHeader);
+  int fourthColumnLen = strlen(fourthColumnHeader);
+  double compressRatio = 0.0;
+
+  /**
+   *  Print compress ration for each byte stream
+   */
+  for(i = 0; i < n; i ++)
   {
-    fsz += zips[i].fsz;
-    zfsz += zips[i].zfsz;
+    fsz       += zips[i].fsz;
+    zfsz      += zips[i].zfsz;
 
-    ztime += zips[i].time1;
-    uztime += zips[i].time2;
+    zipTime   += zips[i].time1;
+    unzipTime += zips[i].time2;
 
-    printf("[%d]: %.4f\n", i, (double)zips[i].zfsz/zips[i].fsz);
+    compressRatio = (double)(zips[i].zfsz) / (double)(zips[i].fsz);
+    printf("%-*d%-*ld%-*ld%-*.*f\n", firstColumnLen, i, secondColumnLen, zips[i].fsz, thirdColumnLen, zips[i].zfsz, fourthColumnLen,4, compressRatio);
+    /*
+     *printf("[%d]: %.4f\n", i, (double)zips[i].zfsz/zips[i].fsz);
+     */
   }
 
-  printf("%d files, (MB)original:compressed: ratio\n",
-         zips[0].fnum);
-  printf("%.2f\t%.2f\t%f\n", fsz/m, zfsz/m,
-                        (double)zfsz/fsz);
-  if(ztime > 0.001)
-    printf("deflate speed: %f MB/s\n", 
-            fsz/(m *ztime));
+/*
+ *  printf("%d files, (MB)original:compressed: ratio\n",
+ *         zips[0].fnum);
+ *  printf("%.2f\t%.2f\t%f\n", fsz/m, zfsz/m,
+ *                        (double)zfsz/fsz);
+ *
+ */
 
-  if(uztime > 0.001)
-    printf("inflate speed: %f MB/s\n",
-            fsz/(m*uztime));
+  printf("%-*s", firstColumnLen, "Whole File");
+  printf("%-*ld%-*ld%-*.*f\n", secondColumnLen, fsz, thirdColumnLen, zfsz, fourthColumnLen, 4, (double)(zfsz)/(double)(fsz));
+
+  if(zipTime > 0.001)
+  {
+    printf("Compression speed: %f MB/s\n", fsz/(m *zipTime));
+  }
+
+  if(unzipTime > 0.001)
+    printf("Decompression speed: %f MB/s\n", fsz/(m*unzipTime));
 
   printf("---------------------------------------\n");
-  printf("ztime = %f, uztime = %f, fsz = %ld, n = %d\n", ztime, uztime,fsz, n);
+  printf("zipTime = %f, unzipTime = %f, fsz = %ld, n = %d\n", zipTime, unzipTime,fsz, n);
+}
+
+void displayResults(mzip_t *zips, int n, const char *hintMsg)
+{
+  int i;
+  double m;
+  uint64_t fsz, zfsz;
+  double zipTime, unzipTime;
+
+  fsz    = 0.0;
+  zfsz   = 0.0;
+  zipTime  = 0.0;
+  unzipTime = 0.0;
+  m      = 1024.0 * 1024.0;
+  printf("-------------------%s Information--------------\n", hintMsg);
+
+  const char *firstColumnHeader = "[ByteStreamIndex]   ";
+  const char *secondColumnHeader = "[Before Compress(Bytes)]   ";
+  const char *thirdColumnHeader = "[After Compress(Bytes)]   ";
+  const char *fourthColumnHeader = "[Compress Ratio]   ";
+  printf("%s%s%s%s\n",firstColumnHeader, secondColumnHeader, thirdColumnHeader,fourthColumnHeader);
+
+  int firstColumnLen = strlen(firstColumnHeader);
+  int secondColumnLen = strlen(secondColumnHeader);
+  int thirdColumnLen = strlen(thirdColumnHeader);
+  int fourthColumnLen = strlen(fourthColumnHeader);
+  double compressRatio = 0.0;
+
+  /**
+   *  Print compress ration for each byte stream
+   */
+  for(i = 0; i < n; i ++)
+  {
+    fsz       += zips[i].fsz;
+    zfsz      += zips[i].zfsz;
+
+    zipTime   += zips[i].time1;
+    unzipTime += zips[i].time2;
+
+    compressRatio = (double)(zips[i].zfsz) / (double)(zips[i].fsz);
+    printf("%-*d%-*ld%-*ld%-*.*f\n", firstColumnLen, i, secondColumnLen, zips[i].fsz, thirdColumnLen, zips[i].zfsz, fourthColumnLen,4, compressRatio);
+    /*
+     *printf("[%d]: %.4f\n", i, (double)zips[i].zfsz/zips[i].fsz);
+     */
+  }
+
+/*
+ *  printf("%d files, (MB)original:compressed: ratio\n",
+ *         zips[0].fnum);
+ *  printf("%.2f\t%.2f\t%f\n", fsz/m, zfsz/m,
+ *                        (double)zfsz/fsz);
+ *
+ */
+
+  printf("%-*s", firstColumnLen, "Whole File");
+  printf("%-*ld%-*ld%-*.*f\n", secondColumnLen, fsz, thirdColumnLen, zfsz, fourthColumnLen, 4, (double)(zfsz)/(double)(fsz));
+
+  if(zipTime > 0.001)
+  {
+    printf("Compression speed: %f MB/s\n", fsz/(m *zipTime));
+  }
+
+  if(unzipTime > 0.001)
+    printf("Decompression speed: %f MB/s\n", fsz/(m*unzipTime));
+
+  printf("---------------------------------------\n");
+  printf("%s Overall: zipTime = %f, unzipTime = %f, original file size = %ld, compressed file size = %ld, reduce = %.4f\n", hintMsg, zipTime, unzipTime,fsz, zfsz, 1.0 - (double)(zfsz)/(double)(fsz));
+
 }
 
 
