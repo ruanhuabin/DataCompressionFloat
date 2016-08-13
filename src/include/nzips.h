@@ -26,6 +26,7 @@ typedef enum {ZLIB_DEF=0,   ZLIB_INF,
 
 typedef struct _mzip_t mzip_t;
 typedef int(*zipfun_p)(mzip_t *zip, char **out, int *outlen);
+typedef int(*zipfun_p_ex)(mzip_t *zip, char **out, int *outlen, int, FILE *);
 typedef int(*unzipfun_p)(mzip_t *zip, btype_t, int outlen, char **out);
 
 struct _mzip_t{
@@ -42,6 +43,7 @@ struct _mzip_t{
   char *zout;
 
   zipfun_p zipfun;
+  zipfun_p_ex zipfun_ex;
   unzipfun_p unzipfun;
  
   /*should move to somewhere else*/

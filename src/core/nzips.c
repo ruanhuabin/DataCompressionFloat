@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
-
+#include <assert.h>
 #include "zlib.h"
 #include "lz4.h"
 #include "lz4hc.h"
@@ -199,6 +199,51 @@ int mzlib_def(mzip_t *zip, char **p, int *len)
   return 0;
 }
 
+
+int mzlib_def_ex(mzip_t *zip, char **p, int *len, int flushFlag, FILE *fout)
+{
+  z_stream *strm = (z_stream*)zip->zipper;
+
+  strm->next_in = (unsigned char*)zip->zin;
+  strm->avail_in = (unsigned)zip->inlen;
+
+  do
+  {
+      strm->next_out = (unsigned char*)zip->zout;
+      strm->avail_out = zip->chk;
+
+      deflate(strm, flushFlag);
+
+      *len = zip->chk - strm->avail_out;
+      if(zip->inlen > *len+HDR_SIZE)
+      {
+        //compressable
+        *p = zip->out;
+        pack_header(*p, COMPRESSED, *len);
+        *len += HDR_SIZE;
+      }
+      else //not compressable
+      {
+        *p = zip->in;
+        pack_header(*p, RAW, zip->inlen);
+        *len = zip->inlen + HDR_SIZE;
+      }
+
+      //TIP:for accounting
+      zip->fsz += zip->inlen;
+      zip->zfsz += *len;
+
+
+      fwrite(*p, 1, *len, fout);
+
+  }while(strm->avail_out == 0);
+
+  assert(strm->avail_in == 0);
+   return 0;
+}
+
+
+
 void print_zerror(int ret)
 {
   switch (ret)
@@ -319,6 +364,66 @@ int mzip_init(mzip_t *zip, uint32_t chk, ztype_t ztype, int strategy)
   zip->time2 = 0.0;
   return 0;
 }
+
+int mzip_init_ex(mzip_t *zip, uint32_t chk, ztype_t ztype, int strategy)
+{
+  zip->ztype = ztype;
+  switch (ztype)
+  {
+    case ZLIB_DEF:
+      zip->zipper = new_zlib_def(LEVEL, strategy);
+      zip->zipfun = mzlib_def;
+      zip->zipfun_ex = mzlib_def_ex;
+      zip->unzipfun = NULL;
+      break;
+    case ZLIB_INF:
+      zip->zipper = new_zlib_inf();
+      zip->zipfun = NULL;
+      zip->unzipfun = mzlib_inf;
+      break;
+    case LZ4_DEF:
+    case LZ4_INF:
+      zip->zipper = NULL;
+      zip->zipfun = mlz4_def;
+      zip->unzipfun = mlz4_inf;
+      break;
+    case LZ4HC_DEF:
+    case LZ4HC_INF:
+      zip->zipper = NULL;
+      zip->zipfun = mlz4hc_def;
+      zip->unzipfun = mlz4_inf;
+      break;
+    default:
+      fprintf(stderr, "unkown zip type:%d\n", ztype);
+      return -1;
+  }
+
+  if(chk >= MAX_BLOCK_SIZE)
+  {
+    fprintf(stderr, "too large chunk size\n");
+    return -2;
+  }
+
+  zip->chk = chk;
+  zip->inlen = 0;
+  zip->outlen = 0;
+
+  zip->in = malloc(HDR_SIZE+chk);
+  zip->out = malloc(HDR_SIZE+chk);
+
+  zip->zin = zip->in + HDR_SIZE;
+  zip->zout = zip->out + HDR_SIZE;
+
+  //accounting
+  zip->fnum = 0;
+  zip->fsz = 0;
+  zip->zfsz = 0;
+  zip->time1 = 0.0;
+  zip->time2 = 0.0;
+  return 0;
+}
+
+
 
 void mzip_term(mzip_t *zip)
 {

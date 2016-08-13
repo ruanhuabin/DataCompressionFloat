@@ -3,6 +3,8 @@
 *.o
 *.swp
 *.swo
+*.mrc
+cscope*
 bin/
 data/
 *_c

@@ -17,7 +17,7 @@
 #      REVISION:  ---
 #===============================================================================
 projectRoot=/root/datacompression/DataCompressionFloat
-compressPrecision=2
+compressPrecision=0
 app=$projectRoot/script/simple_compress_c
 timestamp=`date +%Y-%m-%d:%H:%M:%S`
 inputFileName="data1000x1000x32.mrc"
