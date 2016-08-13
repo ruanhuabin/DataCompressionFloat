@@ -1314,6 +1314,18 @@ static void applyCompressPrecision(char **p0, char **p1, char **p2, char **p3, c
     }
 
 }
+int bitsMask[] =
+{
+    0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFFFC, 0xFFFFFFF8,
+    0xFFFFFFF0, 0xFFFFFFE0, 0xFFFFFFC0, 0xFFFFFF80,
+    0xFFFFFF00, 0xFFFFFE00, 0xFFFFFC00, 0xFFFFF800,
+    0xFFFFF000, 0xFFFFE000, 0xFFFFC000, 0xFFFF8000,
+    0xFFFF0000, 0xFFFE0000, 0xFFFC0000, 0xFFF80000,
+    0xFFF00000, 0xFFE00000, 0xFFC00000, 0xFF800000,
+    0xFF000000, 0xFE000000, 0xFC000000, 0xF8000000,
+    0xF0000000, 0xE0000000, 0xC0000000, 0x80000000,
+    0x00000000
+};
 
 void splitBytes(int startIndex, int num, const int compressPrecision, char* p0, char* p, char* p1, char* p2, char* p3)
 {
@@ -1375,6 +1387,20 @@ void splitBytes(int startIndex, int num, const int compressPrecision, char* p0, 
 	}
 }
 
+void maskBits(float *buffer, int startIndex, int num, const int bitsToErase)
+{
+
+    int *p = (int *)buffer;
+
+    for(int i = startIndex; i < num; i ++)
+    {
+        
+        *p = (*p) & bitsMask[bitsToErase];
+        p = p + 1;
+    }
+}
+
+
 void splitFloatsEx(const float *buf, int num, char *zins[], const int compressPrecision, int isFirstChk)
 {
     int i;
@@ -1404,12 +1430,28 @@ void splitFloatsEx(const float *buf, int num, char *zins[], const int compressPr
             *p3++ = *p++;
         }
 
-		splitBytes(1024/4, num, compressPrecision, p0, p, p1, p2, p3);
+        maskBits(buf, 1024/4, num, compressPrecision);
+        for(int i = 1024 / 4; i < num; i ++)
+        {
+            *p0++ = *p++;
+            *p1++ = *p++;
+            *p2++ = *p++;
+            *p3++ = *p++;
+        }
+		//splitBytes(1024/4, num, compressPrecision, p0, p, p1, p2, p3);
     
     }
     else
     {
-		splitBytes(0, num, compressPrecision, p0, p, p1, p2, p3);
+        maskBits(buf, 0, num, compressPrecision);
+		for(int i = 0; i < num; i ++)
+        {
+            *p0++ = *p++;
+            *p1++ = *p++;
+            *p2++ = *p++;
+            *p3++ = *p++;
+        }
+//splitBytes(0, num, compressPrecision, p0, p, p1, p2, p3);
     /*
      *     for(int i = 0; i < num; i ++)
      *     {
