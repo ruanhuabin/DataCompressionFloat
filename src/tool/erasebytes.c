@@ -58,9 +58,8 @@ int main ( int argc, char *argv[] )
     int bitsToErase = 8;
 
 
-    if(argc < 6)
+    if(argc < 2)
     {
-        printf("abc\n");
         usage(argv);
         exit(-1);
     }

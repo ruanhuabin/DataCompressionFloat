@@ -1189,7 +1189,7 @@ void _convert0(const float *buf,
     }
 }
 
-void splitFloats(const float *buf, int num, char *zins[], const int compressPrecision)
+void splitFloats(const float *buf, int num, char *zins[], const int bitsToMask)
 {
     int i;
     char *p0, *p1, *p2, *p3;
@@ -1201,7 +1201,7 @@ void splitFloats(const float *buf, int num, char *zins[], const int compressPrec
     p3 = zins[3];
     for(i = 0; i < num; i ++)
     {
-        switch(compressPrecision)
+        switch(bitsToMask)
         {
             case 0:
                 *p0++ = *p++;
@@ -1257,9 +1257,9 @@ void splitFloats(const float *buf, int num, char *zins[], const int compressPrec
     }
 }
 
-static void applyCompressPrecision(char **p0, char **p1, char **p2, char **p3, char **p, int compressPrecision)
+static void applyCompressPrecision(char **p0, char **p1, char **p2, char **p3, char **p, int bitsToMask)
 {
-    switch(compressPrecision)
+    switch(bitsToMask)
     {
         case 0:
             *p0++ = *p++;
@@ -1327,11 +1327,11 @@ int bitsMask[] =
     0x00000000
 };
 
-void splitBytes(int startIndex, int num, const int compressPrecision, char* p0, char* p, char* p1, char* p2, char* p3)
+void splitBytes(int startIndex, int num, const int bitsToMask, char* p0, char* p, char* p1, char* p2, char* p3)
 {
 	for (int i = startIndex; i < num; i++) 
     {
-		switch (compressPrecision)
+		switch (bitsToMask)
         {
             case 0:
                 *p0++ = *p++;
@@ -1401,7 +1401,7 @@ void maskBits(float *buffer, int startIndex, int num, const int bitsToErase)
 }
 
 
-void splitFloatsEx(const float *buf, int num, char *zins[], const int compressPrecision, int isFirstChk)
+void splitFloatsEx(const float *buf, int num, char *zins[], const int bitsToMask, int isFirstChk)
 {
     int i;
     char *p0, *p1, *p2, *p3;
@@ -1430,7 +1430,7 @@ void splitFloatsEx(const float *buf, int num, char *zins[], const int compressPr
             *p3++ = *p++;
         }
 
-        maskBits(buf, 1024/4, num, compressPrecision);
+        maskBits(buf, 1024/4, num, bitsToMask);
         for(int i = 1024 / 4; i < num; i ++)
         {
             *p0++ = *p++;
@@ -1438,12 +1438,12 @@ void splitFloatsEx(const float *buf, int num, char *zins[], const int compressPr
             *p2++ = *p++;
             *p3++ = *p++;
         }
-		//splitBytes(1024/4, num, compressPrecision, p0, p, p1, p2, p3);
+		//splitBytes(1024/4, num, bitsToMask, p0, p, p1, p2, p3);
     
     }
     else
     {
-        maskBits(buf, 0, num, compressPrecision);
+        maskBits(buf, 0, num, bitsToMask);
 		for(int i = 0; i < num; i ++)
         {
             *p0++ = *p++;
@@ -1451,11 +1451,11 @@ void splitFloatsEx(const float *buf, int num, char *zins[], const int compressPr
             *p2++ = *p++;
             *p3++ = *p++;
         }
-//splitBytes(0, num, compressPrecision, p0, p, p1, p2, p3);
+//splitBytes(0, num, bitsToMask, p0, p, p1, p2, p3);
     /*
      *     for(int i = 0; i < num; i ++)
      *     {
-     *        switch(compressPrecision)
+     *        switch(bitsToMask)
      *        {
      *            case 0:
      *                *p0++ = *p++;
@@ -1682,7 +1682,7 @@ int runDecompressionEx(FILE *fin, ctx_t *ctx, nz_header *hd, FILE *fout)
 }
 
 
-int runCompress(FILE *fin, ctx_t *ctx, FILE *fout, const int compressPrecision)
+int runCompress(FILE *fin, ctx_t *ctx, FILE *fout, const int bitsToMask)
 {
     int j;
     int num, chk;
@@ -1754,9 +1754,9 @@ int runCompress(FILE *fin, ctx_t *ctx, FILE *fout, const int compressPrecision)
          *_convert0(buf, num, zins);
          */
         /*
-         *splitFloats(buf, num, zins, compressPrecision);
+         *splitFloats(buf, num, zins, bitsToMask);
          */
-        splitFloatsEx(buf, num, zins, compressPrecision, isFirstChk);
+        splitFloatsEx(buf, num, zins, bitsToMask, isFirstChk);
 
         /**
          *  We have processed the first chunk, so from next loop, this flag should be false
@@ -1847,7 +1847,7 @@ int runCompress(FILE *fin, ctx_t *ctx, FILE *fout, const int compressPrecision)
     return 0;
 }
 
-int runCompressEx(FILE *fin, ctx_t *ctx, FILE *fout, const int compressPrecision)
+int runCompressEx(FILE *fin, ctx_t *ctx, FILE *fout, const int bitsToMask)
 {
     int j;
     int num, chk;
@@ -1920,7 +1920,7 @@ int runCompressEx(FILE *fin, ctx_t *ctx, FILE *fout, const int compressPrecision
         /*
          *_convert0(buf, num, zins);
          */
-        splitFloats(buf, num, zins, compressPrecision);
+        splitFloats(buf, num, zins, bitsToMask);
         ctx->zipTime += (now_sec() - begin);
 
         

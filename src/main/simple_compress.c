@@ -21,20 +21,7 @@
 #include "common.h"
 #include "workers.h"
 
-//#define NUM (10)
-#define BEGIN (1)
-#define ZERO (0.0000002)
-#define MINI_PRE (0.00195)
-#define SUBF(a,b) (a>=b ? a-b:b-a)
-#define PSUBF(a,b) (SUBF(a,b)/(a+ZERO))
-#define EQUAL(a,b) (PSUBF(a,b) < ZERO)
-#define TAG {printf("%s:%d\n", __FILE__,  __LINE__);}
-
-#define XOR_EQUAL(a,b) (((a)^(b)) < 1)
-#define XOR_PEQUAL(a,b) (((a)^(b)) < (1<<16))
-
-
-int mrc_compress(const char *src, const char *dst, const int compressPrecision)
+int mrc_compress(const char *src, const char *dst, const int bitsToMask)
 {
 	FILE *fin = fopen(src, "rb");
 
@@ -59,7 +46,7 @@ int mrc_compress(const char *src, const char *dst, const int compressPrecision)
     ctx.fnum += 1;
     ctx.fsz += fsize_fp(fin);
 
-    runCompress(fin, &ctx, fout, compressPrecision);
+    runCompress(fin, &ctx, fout, bitsToMask);
 
     ctx_print_more(&ctx, "Deflated");
 
@@ -92,45 +79,81 @@ int mrc_uncompress(const char *src, const char *dst)
     displayHeader(&hd, "Header Info in Decompression");
     runDecompression(fin, &ctx, &hd, fout);
     displayContext(&ctx, "Contex Info after Decompression");
-    /*
-     *ctx_print_more(&ctx, "Decompress");
-     */
     fclose(fout);
     fclose(fin);
     return 0;
 }
 
+void usage(char **argv)
+{
+      printf("\nUsage:\n\n");
+      printf("\t%s -i <input file> -o <output file> [-t <zip | unzip> -b <bits to erase>]", argv[0]);
+      printf("\nwhere:\n");
+      printf("\t");
+      printf("-i\tinput file that need to be compressed or decompressed\n\n");
+      printf("\t");
+      printf("-o\t output file that being compressed or decompressed \n\n");
+      printf("\t");
+      printf("-b\t bits to be erased, range[0..32], default is 0\n\n");
+      printf("\t");
+      printf("-t\t operation type, e.g compress or decompressed file, value should be [zip | unzip], default is zip\n\n");
+}
+
+
 int main(int argc, char *argv[])
 {
-    printf("ZLIB:%s\n", zlib_version);
-    if(argc < 4)
+    char *opt_str = "hi:o:b:t:";
+    int opt = 0;
+    const char *inputFileName = NULL;
+    const char *outputFileName = NULL;
+    int bitsToErase = 8;
+
+    const char *operType = "zip";
+
+
+    if(argc < 2)
     {
-        printf("Usage: %s -oz <infile> <outfile> [-cp [compress precision] \n", argv[0]);
-        printf("Usage: %s -ou <infile> <outfile> [-cp 1]\n", argv[0]);
-        return -1;
+        usage(argv);
+        exit(-1);
     }
 
-    char *inputFile  = argv[2];
-    char *outputFile = argv[3];
-    
-    int compressPrecision = 0;
-    if(argc == 6)
+    while( (opt = getopt(argc, argv, opt_str)) != -1)
     {
-        compressPrecision = atoi(argv[5]);
-    }
+        switch(opt)
+        {
+                case 'i':
+                        inputFileName = optarg;
+                        break;
+                case 'o':
+                        outputFileName = optarg;
+                        break;
+                case 'b':
+                        bitsToErase = atoi(optarg);
+                        break;
+                case 't':
+                        operType = optarg;
+                        break;
+                case 'h':
+                    usage(argv);
+                    return 0;
+                default:
+                    printf("Invalid command line parameters: %s!\n", optarg);
+                    usage(argv);
+                    return -1;
+        }
+    }       
 
-    printf("Compress Precision = %d\n", compressPrecision);
-    /**
-     *  Just do uncompress
-     */
-    if(strcmp(argv[1], "-ou") == 0)
-    {
-        mrc_uncompress(inputFile, outputFile);
-    }
-    else
-    {
-        mrc_compress(inputFile, outputFile, compressPrecision);
-    }
-    return 0;
+   printf("ZLIB:%s\n", zlib_version);
+   if(strcmp(operType, "zip") == 0)
+   {
+        mrc_compress(inputFileName, outputFileName, bitsToErase);
+   }
+   else if(strcmp(operType, "unzip") == 0)
+   {
+        mrc_uncompress(inputFileName, outputFileName);
+   }
+
+
+   return 0;
 }
 

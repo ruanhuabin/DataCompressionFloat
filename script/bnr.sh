@@ -30,5 +30,5 @@ then
 fi
 
 cd script/
-./run_simple_full.sh $1
+./middle_full.sh $1
 
