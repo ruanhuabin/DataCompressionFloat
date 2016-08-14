@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-
+#include <sys/time.h>
 #include "zlib.h"
 #include "common.h"
 #include "workers.h"
@@ -215,8 +215,6 @@ int64_t handle_them(fnames_t *fnames, int num, int type)
 
 int start_job(int argc, char *argv[], int jtype)
 {
-  char *src = argv[2];
-  char *key = argv[3];
   fnames_t fnames;
   double begin, end, diff, rate, num;
   struct timeval tim;
@@ -287,8 +285,6 @@ int64_t compress_them(fnames_t *fnames, int num)
 
 int do_compress_only(int argc, char *argv[])
 {
-  char *src = argv[2];
-  char *key = argv[3];
   fnames_t fnames;
   double begin, end, diff, rate, num;
   struct timeval tim;
@@ -320,8 +316,6 @@ int do_compress_only(int argc, char *argv[])
 
 int do_uncompress_only(int argc, char *argv[])
 {
-  char *src = argv[2];
-  char *key = argv[3];
   fnames_t fnames;
   double begin, end, diff, rate, num;
   struct timeval tim;
@@ -390,8 +384,6 @@ int64_t compress_uncompress_them(fnames_t *fnames, int num)
 
 int do_compress_uncompress(int argc, char *argv[])
 {
-  char *src = argv[2];
-  char *key = argv[3];
   fnames_t fnames;
   double begin, end, diff, rate, num;
   struct timeval tim;

@@ -48,8 +48,6 @@ int mrc_compress(const char *src, const char *dst, const int bitsToMask)
 
     runCompress(fin, &ctx, fout, bitsToMask);
 
-    ctx_print_more(&ctx, "Deflated");
-
     fclose(fin);
     fclose(fout);
     return 0;

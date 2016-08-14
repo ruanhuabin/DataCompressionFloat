@@ -13,7 +13,7 @@ extern "C" {
 ///////////////////////////////////////////////////////////////
 #include <stdio.h>
 #include <stdint.h>
-
+#include <nzips.h>
 /* ------------- predictor types -----------------*/
 typedef enum {LTIME=0, LPOS, LORENZO, 
               STEADY, UNSTEADY,
@@ -144,6 +144,8 @@ void displayHeader(nz_header *hd, const char *hintMsg);
  *  Use to replace ctx_print
  */
 void displayContext(ctx_t *ctx, const char *hintMsg);
+void displayResults(mzip_t *zips, int n, const char *hintMsg);
+
 #define TAG {printf("%s:%d\n", __FILE__,  __LINE__);}
 
 #define _OUTPUT_ZIP_ (1)

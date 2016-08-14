@@ -168,7 +168,7 @@ void ctx_print(ctx_t *ctx)
 {
     double m = 1024*1024.0;
 
-    printf("%llu\t%llu\t%.4f",
+    printf("%lu\t%lu\t%.4f",
             ctx->fsz, ctx->zfsz,
             (double)ctx->zfsz/ctx->fsz);
 
@@ -476,7 +476,7 @@ void nz_header_term(nz_header *hd)
 
 void nz_header_print(nz_header *hd)
 {
-    printf("fsz:%llu\n", hd->fsz);
+    printf("fsz:%lu\n", hd->fsz);
     printf("chk:%u\n", hd->chk);
     printf("type:%u\n", hd->type);
 
@@ -492,14 +492,12 @@ void nz_header_print(nz_header *hd)
 void displayHeader(nz_header *hd, const char *hintMsg)
 {
 
-    printf("[%s]: Original file size = %ld, chunk size = %ld, compresstion type = %d\n", hintMsg, hd->fsz, hd->chk, hd->type);
+    printf("[%s]: Original file size = %ld, chunk size = %d, compresstion type = %d\n", hintMsg, hd->fsz, hd->chk, hd->type);
 }
 
 int readHeader(FILE *fin, nz_header *hd)
 {
     int i;
-    map_t *map = hd->map;
-
     if(fread(&(hd->fsz), sizeof(uint64_t), 1, fin) < 1)
     {
         fprintf(stderr, "[ERROR]:Failed to read file\n");

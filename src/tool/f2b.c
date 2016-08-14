@@ -166,7 +166,7 @@ int main ( int argc, char *argv[] )
 
     return 0;
     float num = 2.34;
-    char *byte = &num;
+    char *byte = (char *)&num;
 
     for(int i = 3; i >= 0; i--)
     {

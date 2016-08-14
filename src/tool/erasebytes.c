@@ -118,7 +118,7 @@ int main ( int argc, char *argv[] )
     while(num1 > 0)
     {
 
-        //char *p =(char *)buffer1;
+       // char *p =(char *)buffer1;
         int *p =(int *)buffer1;
         for(int i = 0; i < num1; i ++)
         {

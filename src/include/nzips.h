@@ -113,6 +113,9 @@ void print_result(mzip_t *zip);
 void print_results(mzip_t *zips, int n);
 void display_results(mzip_t *zips, int n, const char *hintMsg);
 
+void init_zips(mzip_t zips[], int chk);
+void init_zips_ex(mzip_t zips[], int chk);
+int mzip_init_ex(mzip_t *zip, uint32_t chk, ztype_t ztype, int strategy);
 #define TAG {printf("%s:%d\n", __FILE__,  __LINE__);}
 
 ///////////////////////////////////////////////////////////////

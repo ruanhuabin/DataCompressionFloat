@@ -25,10 +25,23 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <syslog.h>
+typedef struct _stat_info_t
+{
+    float n1;
+    float n2;
+    float err;
+    float relativeErr;
+
+}stat_info_t;
+
+unsigned int count = 0;
+const unsigned MAX_ITEM_NUM = 4000 * 4000 * 40;
+
+float enlargeTimes = 1.0f;
 void usage(char **argv)
 {
       printf("\nUsage:\n\n");
-      printf("\t%s -a <original file> -b <decompress file> -o <output result file>", argv[0]);
+      printf("\t%s -a <original file> -b <decompress file> -o <output result file> -k <int num>", argv[0]);
       printf("\nwhere:\n");
       printf("\t");
       printf("-a\toriginal file without being compressed\n\n");
@@ -36,9 +49,106 @@ void usage(char **argv)
       printf("-b\tfile that being decompressed from a compessed file\n\n");
       printf("\t");
       printf("-o\tfile that used to save the analysis result\n\n");
+      printf("\t");
+      printf("-k\t top K maximum absolutely error point that will be printed to console\n\n");
 }
 
-void compare(float *buffer1, float *buffer2, int n)
+const float ZERO = 1E-7;
+void topK(stat_info_t *input, int K, int n)
+{
+    stat_info_t tmp;
+    for(int k = 0; k < K; k ++)
+    {
+        printf("k = %d\n", k);
+        for(int i = n - 1; i > k; i --)
+        {
+            if(input[i].err > input[i - 1].err)
+            {
+                tmp = input[i - 1];
+                input[i - 1] = input[i];
+                input[i] = tmp;
+            }
+            else if(fabsf(input[i].err - input[i - 1].err) <= ZERO)
+            {
+                if(input[i].relativeErr > input[i - 1].relativeErr)
+                {
+                    tmp = input[i - 1];
+                    input[i - 1] = input[i];
+                    input[i] = tmp;
+                }
+            }
+        }
+    }
+}
+int comparator(const void *a, const void *b)
+{
+    stat_info_t *sa = (stat_info_t *)a;
+    stat_info_t *sb = (stat_info_t *)b;
+
+    float erra = sa->err;
+    float errb = sb->err;
+
+    float relativeErra = sa->relativeErr;
+    float relativeErrb = sb->relativeErr;
+
+
+    /**
+     *  Sort in reverse order
+     */
+    if( erra > errb)
+    {
+        //fprintf(stderr, "%f:%f:%d\n", erra, errb, -1);
+        return -1;
+    }
+    else if(erra < errb)
+    {
+        //fprintf(stderr, "%f:%f:%d\n", erra, errb, 1);
+        return 1;
+    }
+    else if(fabsf(erra - errb) <= 10E-5) /* When two err equal, then compare coresponding relative err */
+    {
+       // fprintf(stderr, "%f:%f:%d\n", erra, errb, 0);
+        if(relativeErra > relativeErrb)
+        {
+            return -1;
+        }
+        else if(relativeErra < relativeErrb)
+        {
+            return 1;
+        }
+        else if(fabsf(relativeErra - relativeErrb) <= 10E-5)
+        {
+            return 0;
+        }
+    }
+
+}
+
+int comparator2(const void *a, const void *b)
+{
+    stat_info_t *sa = (stat_info_t *)a;
+    stat_info_t *sb = (stat_info_t *)b;
+
+    float erra = sa->err;
+    float errb = sb->err;
+
+    float relativeErra = sa->relativeErr;
+    float relativeErrb = sb->relativeErr;
+
+    char strErra[64];
+    char strErrb[64];
+
+    memset(strErra, '\0', sizeof(strErra));
+    memset(strErrb, '\0', sizeof(strErrb));
+    sprintf(strErra, "%.6f", erra);
+    sprintf(strErrb, "%.6f", errb);
+
+    return strcmp(strErrb, strErra);
+}
+
+
+
+void calculateDiff(float *buffer1, float *buffer2, int n, stat_info_t *stat_points)
 {
     //float *diff = (float *)malloc(n * sizeof(float));
 
@@ -59,14 +169,23 @@ void compare(float *buffer1, float *buffer2, int n)
         {
             relativeErr = 0.0f;
         }
-        printf("%f %f %f %E %f %E\n", n1, n2, err, err, relativeErr, relativeErr);
+
+        //printf("i = %d, n = %d, count = %d\n", i, n, count);
+
+        stat_points[count].n1 = n1;
+        stat_points[count].n2 = n2;
+        stat_points[count].err = err * enlargeTimes;
+        stat_points[count].relativeErr = relativeErr * enlargeTimes;
+        count ++;
+    //    printf("%f %f %f %E %f %E\n", n1, n2, err, err, relativeErr, relativeErr);
     }
 }
 
 int main ( int argc, char *argv[] )
 { 
-    char *opt_str = "ha:b:o:";
+    char *opt_str = "ha:b:o:k:";
     int opt = 0;
+    int rank = 5;
     const char *originalFile = NULL;
     const char *decompressFile = NULL;
     const char *outputResultFile = NULL;
@@ -91,6 +210,9 @@ int main ( int argc, char *argv[] )
                 case 'o':
                         outputResultFile = optarg;
                         break;
+                case 'k':
+                        rank = atoi(optarg);
+                        break;
                 case 'h':
                     usage(argv);
                     return 0;
@@ -102,7 +224,7 @@ int main ( int argc, char *argv[] )
     }       
 
 
-    printf("original File = %s, decompress file = %s, output file = %s\n", originalFile, decompressFile, outputResultFile);
+    printf("original File = %s, decompress file = %s, output file = %s, topN = %d\n", originalFile, decompressFile, outputResultFile, rank);
 
     FILE *origInputFile = fopen(originalFile, "rb");
     FILE *decompressInputFile = fopen(decompressFile, "rb");
@@ -127,24 +249,71 @@ int main ( int argc, char *argv[] )
     }
 
     const int ITEMS_TO_READ = 1024 * 1024 * 8;
+    /*
+     *const int ITEMS_TO_READ = 1024 * 6;
+     */
     float *buffer1 = (float *)malloc(ITEMS_TO_READ * sizeof(float));
     float *buffer2 = (float *)malloc(ITEMS_TO_READ * sizeof(float));
+    stat_info_t *stat_points = (stat_info_t *)malloc(MAX_ITEM_NUM * sizeof(stat_info_t));
+    unsigned int num1 = fread(buffer1, sizeof(float), ITEMS_TO_READ, origInputFile);
+    unsigned int num2 = fread(buffer2, sizeof(float), ITEMS_TO_READ, decompressInputFile);
 
-    int num1 = fread(buffer1, sizeof(float), ITEMS_TO_READ, origInputFile);
-    int num2 = fread(buffer2, sizeof(float), ITEMS_TO_READ, decompressInputFile);
 
+    if(buffer1 == NULL)
+    {
+        fprintf(stderr, "[%s:%d]: Memory alloc failed, require mem size is: %lu\n", __FILE__, __LINE__, ITEMS_TO_READ * sizeof(float));
+        return -1;
+    }
+    if(buffer2 == NULL)
+    {
+        fprintf(stderr, "[%s:%d]: Memory alloc failed, require mem size is: %lu\n", __FILE__, __LINE__, ITEMS_TO_READ * sizeof(float));
+        return -1;
+    }
+    if(stat_points == NULL)
+    {
+        fprintf(stderr, "[%s:%d]: Memory alloc failed, require mem size is: %lu\n", __FILE__, __LINE__, MAX_ITEM_NUM * sizeof(float));
+        return -1;
+    }
     printf("num1 = %d, num2 = %d\n", num1, num2);
 
+
+
+    unsigned int chunkIndex = 0;
+    unsigned int num = 0;
+    unsigned int totalPointsRead = 0;
     while(num1 > 0 && num2 > 0)
     {
-        compare(buffer1, buffer2, num1 < num2 ? num1 : num2);
+        num = num1 < num2 ? num1 : num2;
+        totalPointsRead += num;
+        printf("chunkIndex = %u, num1 = %u, num2 = %u, totalPointsRead = %u, maxCouldLoad = %u\n", chunkIndex, num1, num2, totalPointsRead, MAX_ITEM_NUM);
+        chunkIndex ++;
+        calculateDiff(buffer1, buffer2, num, stat_points);
         num1 = fread(buffer1, sizeof(float), ITEMS_TO_READ, origInputFile);
         num2 = fread(buffer2, sizeof(float), ITEMS_TO_READ, decompressInputFile);
     }
 
     
+    printf("Total Points = %u\n", count);
+    //qsort(stat_points, count, sizeof(stat_info_t), comparator);
+
+    topK(stat_points, rank, count); 
+
+
+    float n1 = 0.0f;
+    float n2 = 0.0f;
+    float err = 0.0f;
+    float relativeErr = 0.0f;
+    for(int i = 0; i < rank; i ++)
+    {
+        n1 = stat_points[i].n1;
+        n2 = stat_points[i].n2;
+        err = stat_points[i].err;
+        relativeErr = stat_points[i].relativeErr;
+        printf("%f %f %f %E %f %E\n", n1, n2, err, err, relativeErr, relativeErr);
+    }
     free(buffer1);
     free(buffer2);
+    free(stat_points);
     return EXIT_SUCCESS;
 }
 

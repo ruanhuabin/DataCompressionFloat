@@ -44,7 +44,7 @@ echo "output file path: ${outputFilePath} "
 zipCMDLineArgs=" -i $inputFilePath -o ${outputFilePath} -b ${bitsToMask} -t zip"
 echo "Compress Command: ${app} ${zipCMDLineArgs}"
 #run compression
-${app} ${zipCMDLineArgs}
+${app} -i ${inputFilePath} -o ${outputFilePath} -b ${bitsToMask} -t zip 
 #${app} -oz $inputFilePath ${outputFilePath} -cp ${bitsToMask} 
 
 sleep 1
@@ -53,10 +53,10 @@ sleep 1
 jyOutputFilePath=$projectRoot/tmp/jy_${inputFilePrefix}_${timestamp}${inputFileSuffix}
 unzipCMDLineArgs=" -i ${outputFilePath} -o ${jyOutputFilePath} -t unzip"
 echo "Compress Command: ${app} ${zipCMDLineArgs}"
-${app} ${unzipCMDLineArgs}
+${app} -i ${outputFilePath} -o ${jyOutputFilePath} -t unzip 
 #${app} -ou $outputFilePath ${jyOutputFilePath}
 
-#sleep 1
+sleep 1
 diff ${inputFilePath} ${jyOutputFilePath}
 if [ $? -eq 0 ]
 then

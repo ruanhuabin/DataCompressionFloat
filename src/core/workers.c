@@ -17,9 +17,22 @@ different zips
 #define ZIP_GOOD Z_DEFAULT_STRATEGY
 
 #define CHUNK (6*1048576)
+//#define CHUNK (6*1024)
 #define EWIDTH (4)  //sizeof(float) = 4
 #define ADAPT_NUM (2)   //compress 3, 2, 1
 #define ADAPT_NUMZ (0)  //compress 0
+int bitsMask[] =
+{
+    0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFFFC, 0xFFFFFFF8,
+    0xFFFFFFF0, 0xFFFFFFE0, 0xFFFFFFC0, 0xFFFFFF80,
+    0xFFFFFF00, 0xFFFFFE00, 0xFFFFFC00, 0xFFFFF800,
+    0xFFFFF000, 0xFFFFE000, 0xFFFFC000, 0xFFFF8000,
+    0xFFFF0000, 0xFFFE0000, 0xFFFC0000, 0xFFF80000,
+    0xFFF00000, 0xFFE00000, 0xFFC00000, 0xFF800000,
+    0xFF000000, 0xFE000000, 0xFC000000, 0xF8000000,
+    0xF0000000, 0xE0000000, 0xC0000000, 0x80000000,
+    0x00000000
+};
 
 
 /* ---------------- aulix ----------------- */
@@ -120,12 +133,9 @@ void _unzip_1(FILE *fin,
 
 void _unzip_1_Ex(FILE *fin, mzip_t zips[], char *outs[], uint32_t chk)
 {
-    int j;
-    char *p;
-    char bhd[HDR_SIZE*4] = {0};
     btype_t btypes[4];
 
-    double begin; //Timing
+    double begin = now_sec(); //Timing
 
     //zip-block headers
 /*
@@ -147,7 +157,7 @@ void _unzip_1_Ex(FILE *fin, mzip_t zips[], char *outs[], uint32_t chk)
         fread(subBlkHeader, 1, 4, fin);
         unpack_header(subBlkHeader, &(btypes[i]), &(zips[i].inlen));
         fread(zips[i].in, 1, zips[i].inlen, fin);
-        printf("i = %d, ftell(fin) = %d\n", i, ftell(fin));
+        printf("i = %d, ftell(fin) = %ld\n", i, ftell(fin));
         printf("zips[%d].inlen = %d ", i, zips[i].inlen);
         zips[i].unzipfun(&(zips[i]), btypes[i], chk, &(outs[i]));
         zips[i].time2 += (now_sec() - begin);
@@ -1257,140 +1267,22 @@ void splitFloats(const float *buf, int num, char *zins[], const int bitsToMask)
     }
 }
 
-static void applyCompressPrecision(char **p0, char **p1, char **p2, char **p3, char **p, int bitsToMask)
-{
-    switch(bitsToMask)
-    {
-        case 0:
-            *p0++ = *p++;
-            *p1++ = *p++;
-            *p2++ = *p++;
-            *p3++ = *p++;
-            break;
-        case 1:
-            *p0 = '\0';
-            p0 ++;
-            p ++;
-            *p1++ = *p++;
-            *p2++ = *p++;
-            *p3++ = *p++;
-            break;
-        case 2:
-            *p0 = '\0';
-            p0 ++;
-            p  ++;
-            *p1 = '\0';
-            p ++;
-            *p2++ = *p++;
-            *p3++ = *p++;
-            break;
-        case 3:
-            *p0 = '\0';
-            p0 ++;
-            p  ++;
-            *p1 = '\0';
-            p ++;
-            *p2 = '\0';
-            p ++;
-            *p3++ = *p++;
-            break;
-        case 4:
-            *p0 = '\0';
-            p0 ++;
-            p  ++;
-            *p1 = '\0';
-            p ++;
-            *p2 = '\0';
-            p ++;
-            *p3 = '\0';
-            p ++;
-            break;
-        default:
-            *p0++ = *p++;
-            *p1++ = *p++;
-            *p2++ = *p++;
-            *p3++ = *p++;
-            break;
-    }
 
-}
-int bitsMask[] =
-{
-    0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFFFC, 0xFFFFFFF8,
-    0xFFFFFFF0, 0xFFFFFFE0, 0xFFFFFFC0, 0xFFFFFF80,
-    0xFFFFFF00, 0xFFFFFE00, 0xFFFFFC00, 0xFFFFF800,
-    0xFFFFF000, 0xFFFFE000, 0xFFFFC000, 0xFFFF8000,
-    0xFFFF0000, 0xFFFE0000, 0xFFFC0000, 0xFFF80000,
-    0xFFF00000, 0xFFE00000, 0xFFC00000, 0xFF800000,
-    0xFF000000, 0xFE000000, 0xFC000000, 0xF8000000,
-    0xF0000000, 0xE0000000, 0xC0000000, 0x80000000,
-    0x00000000
-};
 
-void splitBytes(int startIndex, int num, const int bitsToMask, char* p0, char* p, char* p1, char* p2, char* p3)
-{
-	for (int i = startIndex; i < num; i++) 
-    {
-		switch (bitsToMask)
-        {
-            case 0:
-                *p0++ = *p++;
-                *p1++ = *p++;
-                *p2++ = *p++;
-                *p3++ = *p++;
-                break;
-            case 1:
-                *p0 = '\0';
-                p0++;
-                p++;
-                *p1++ = *p++;
-                *p2++ = *p++;
-                *p3++ = *p++;
-                break;
-            case 2:
-                *p0 = '\0';
-                p0++;
-                p++;
-                *p1 = '\0';
-                p++;
-                *p2++ = *p++;
-                *p3++ = *p++;
-                break;
-            case 3:
-                *p0 = '\0';
-                p0++;
-                p++;
-                *p1 = '\0';
-                p++;
-                *p2 = '\0';
-                p++;
-                *p3++ = *p++;
-                break;
-            case 4:
-                *p0 = '\0';
-                p0++;
-                p++;
-                *p1 = '\0';
-                p++;
-                *p2 = '\0';
-                p++;
-                *p3 = '\0';
-                p++;
-                break;
-            default:
-                *p0++ = *p++;
-                *p1++ = *p++;
-                *p2++ = *p++;
-                *p3++ = *p++;
-                break;
-		}
-	}
-}
-
-void maskBits(float *buffer, int startIndex, int num, const int bitsToErase)
+void maskBitsEx(float *buffer, int startIndex, int num, const int bitsToErase, int isFirstChk)
 {
 
     int *p = (int *)buffer;
+
+    
+    /**
+     *  We should ignore first 1024 bytes in first chunk since it is the header info
+     */
+    if(isFirstChk)
+    {
+        startIndex = startIndex + 256;
+        p = p + 256;
+    }
 
     for(int i = startIndex; i < num; i ++)
     {
@@ -1400,10 +1292,8 @@ void maskBits(float *buffer, int startIndex, int num, const int bitsToErase)
     }
 }
 
-
-void splitFloatsEx(const float *buf, int num, char *zins[], const int bitsToMask, int isFirstChk)
+void splitFloatsEx(float *buf, int num, char *zins[], int bitsToMask, int isFirstChk)
 {
-    int i;
     char *p0, *p1, *p2, *p3;
     char *p = (char*)buf;
 
@@ -1415,107 +1305,15 @@ void splitFloatsEx(const float *buf, int num, char *zins[], const int bitsToMask
     /**
      *  1024 Bytes in the first chunk is the header info in MRC file, we should not apply lossy compression to it
      */
-
-    if(isFirstChk)
+    maskBitsEx(buf, 0, num, bitsToMask, isFirstChk);
+    for(int i = 0; i < num; i ++)
     {
-
-        /**
-         *  In every loop, we operate four bytes, so we need to make 1024 div 4
-         */
-        for(int i = 0; i < 1024 / 4; i ++)
-        {
-            *p0++ = *p++;
-            *p1++ = *p++;
-            *p2++ = *p++;
-            *p3++ = *p++;
-        }
-
-        maskBits(buf, 1024/4, num, bitsToMask);
-        for(int i = 1024 / 4; i < num; i ++)
-        {
-            *p0++ = *p++;
-            *p1++ = *p++;
-            *p2++ = *p++;
-            *p3++ = *p++;
-        }
-		//splitBytes(1024/4, num, bitsToMask, p0, p, p1, p2, p3);
-    
+        *p0++ = *p++;
+        *p1++ = *p++;
+        *p2++ = *p++;
+        *p3++ = *p++;
     }
-    else
-    {
-        maskBits(buf, 0, num, bitsToMask);
-		for(int i = 0; i < num; i ++)
-        {
-            *p0++ = *p++;
-            *p1++ = *p++;
-            *p2++ = *p++;
-            *p3++ = *p++;
-        }
-//splitBytes(0, num, bitsToMask, p0, p, p1, p2, p3);
-    /*
-     *     for(int i = 0; i < num; i ++)
-     *     {
-     *        switch(bitsToMask)
-     *        {
-     *            case 0:
-     *                *p0++ = *p++;
-     *                *p1++ = *p++;
-     *                *p2++ = *p++;
-     *                *p3++ = *p++;
-     *                break;
-     *            case 1:
-     *                *p0 = '\0';
-     *                p0 ++;
-     *                p ++;
-     *                *p1++ = *p++;
-     *                *p2++ = *p++;
-     *                *p3++ = *p++;
-     *                break;
-     *            case 2:
-     *                *p0 = '\0';
-     *                p0 ++;
-     *                p  ++;
-     *                *p1 = '\0';
-     *                p ++;
-     *                *p2++ = *p++;
-     *                *p3++ = *p++;
-     *                break;
-     *            case 3:
-     *                *p0 = '\0';
-     *                p0 ++;
-     *                p  ++;
-     *                *p1 = '\0';
-     *                p ++;
-     *                *p2 = '\0';
-     *                p ++;
-     *                *p3++ = *p++;
-     *                break;
-     *            case 4:
-     *                *p0 = '\0';
-     *                p0 ++;
-     *                p  ++;
-     *                *p1 = '\0';
-     *                p ++;
-     *                *p2 = '\0';
-     *                p ++;
-     *                *p3 = '\0';
-     *                p ++;
-     *                break;
-     *            default:
-     *                *p0++ = *p++;
-     *                *p1++ = *p++;
-     *                *p2++ = *p++;
-     *                *p3++ = *p++;
-     *                break;
-     *        }
-     *}
-     */
-
-    
-    }
- 
- 
-   }
+}
 
 
 void _unconvert0(float *buf,
@@ -1634,9 +1432,9 @@ int runDecompressionEx(FILE *fin, ctx_t *ctx, nz_header *hd, FILE *fout)
     num = fsz/chk;
     for(i = 0; i < num; i ++)
     {
-        printf("i = %d, num = %d, chk = %ld start to run unzip_ex\n", i, num, chk);
+        printf("i = %d, num = %d, chk = %d start to run unzip_ex\n", i, num, chk);
         _unzip_1_Ex(fin, zips, outs, chk);
-        printf("i = %d, num = %d, chk = %ld, End to run unzip_ex\n", i, num, chk);
+        printf("i = %d, num = %d, chk = %d, End to run unzip_ex\n", i, num, chk);
         _unconvert0(buf, chk, outs);
 
 #ifdef _OUTPUT_UNZIP_
@@ -1853,7 +1651,7 @@ int runCompressEx(FILE *fin, ctx_t *ctx, FILE *fout, const int bitsToMask)
     int num, chk;
     nz_header hd;
 #ifdef _OUTPUT_ZIP_
-    char bhd[4*HDR_SIZE] = {0};
+    //char bhd[4*HDR_SIZE] = {0};
 #endif
     float *buf;
 
