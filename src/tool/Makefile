@@ -4,8 +4,10 @@ BIN_MODULE += $(patsubst %.cc, %_cc, $(wildcard *.cc))
 BIN_MODULE += $(patsubst %.cpp, %_cpp, $(wildcard *.cpp))
 BIN_MODULE += $(patsubst %.cxx, %_cxx, $(wildcard *.cxx))
 
+TOOL_LIBS := -lutil -lz -lpthread -lm
+
 define link-cmd
-	$(CC) $(CFLAGS) -I$(INC_PATH) -L$(LIB_PATH) -o $(addprefix ../../bin/, $@) $< $(LIBS)
+	$(CC) $(CFLAGS) -I$(INC_PATH) -L$(LIB_PATH) -o $(addprefix ../../bin/, $@) $< $(TOOL_LIBS)
 endef
 VPATH = ../../bin
 all:$(BIN_MODULE)
