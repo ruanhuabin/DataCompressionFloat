@@ -47,6 +47,8 @@ int zip_uncompress(ctx_t *ctx, const char *src, const char *dst)
 	FILE *fin, *fout;
 	mrczip_header_t hd;
 
+	fin = fopen(src, "rb");
+	fout = fopen(dst, "wb");
 	if (fin == NULL)
 	{
 		fprintf(stderr, "[%s:%d] ERROR: fail open:%s\n",  __FILE__, __LINE__, src);
@@ -79,7 +81,7 @@ int zip_uncompress(ctx_t *ctx, const char *src, const char *dst)
 }
 
 
-int line_count(const char *fname)
+int count_file_num(const char *fname)
 {
 	FILE *fp;
 	int lines;
@@ -102,46 +104,8 @@ int line_count(const char *fname)
 	return lines;
 }
 
-int is_white(char *p)
-{
-	char ch = *p;
-	if (ch == ' ' || ch == '\t' || ch == '\x0b')
-		return 1;
 
-	return 0;
-}
-
-int parse_line(char *buf, char **pname, int *len, uint32_t dims[])
-{
-	int num;
-	char *p = buf;
-	char *end = p + strlen(buf);
-
-	while ((p != end) && is_white(p))
-		p++;
-
-	if (buf[0] == '#')
-		return 0;
-
-	*pname = p;
-	while ((p != end) && !is_white(p))
-		p++;
-
-	*len = p - (*pname);
-
-	num = sscanf(p, "%u %u %u %u", &(dims[0]), &(dims[1]), &(dims[2]),
-			&(dims[3]));
-
-	if (num < 3)
-		return 0;
-
-	if (num == 3)
-		dims[3] = 1;
-
-	return 1;
-}
-
-void fnames_print(fnames_t *fnames)
+void print_file_container_info(file_container_t *fnames)
 {
 	int i;
 	for (i = 0; i < fnames->size; i++)
@@ -151,43 +115,60 @@ void fnames_print(fnames_t *fnames)
 
 }
 
-int fnames_init(fnames_t *fnames, char *fname, char *prefix, char *suffix)
+void erase_space(char *buffer)
+{
+	int len = strlen(buffer);
+	for(int i = len - 1; i >= 0; i --)
+	{
+		if(buffer[i] == ' ' || buffer[i] == '\n' || buffer[i] == '\t')
+		{
+			buffer[i] = '\0';
+		}
+		else
+		{
+			break;
+		}
+
+	}
+}
+
+int init_file_container(file_container_t *fnames, char *file_list_descriptor, char *prefix, char *suffix)
 {
 	int i, j, lines;
-	char buf[1024] =
-	{ 0 };
+	char buf[1024];
 
 	FILE *fp;
 	int len;
 	char *pname;
-	uint32_t dims[4] =
-	{ 0 };
 
-	lines = line_count(fname);
+	memset(buf, '\0', sizeof(buf));
+	lines = count_file_num(file_list_descriptor);
 
 	fnames->idx = 0;
 	fnames->size = 0;
-	fnames->num = lines;
+	fnames->fileNum = lines;
 
 	fnames->srcs = (char**) malloc(lines * sizeof(char*));
 	fnames->dsts = (char**) malloc(lines * sizeof(char*));
 
 
-	fp = fopen(fname, "r");
+	fp = fopen(file_list_descriptor, "r");
 	for (i = 0, j = 0; i < lines; i++)
 	{
 		fgets(buf, 1024, fp);
-		if (parse_line(buf, &pname, &len, dims))
-		{
-			fnames->srcs[j] = (char*) malloc(len + 1);
-			fnames->dsts[j] = (char*) malloc(256);
+		erase_space(buf);
+		pname = buf;
+		len = strlen(buf);
 
 
-			memcpy(fnames->srcs[j], pname, len);
-			sprintf(fnames->dsts[j], "%s%d.%s", prefix, j, suffix);
+		fnames->srcs[j] = (char*) malloc(len + 1);
+		fnames->dsts[j] = (char*) malloc(512);
 
-			j++;
-		}
+
+		memcpy(fnames->srcs[j], pname, len);
+		sprintf(fnames->dsts[j], "%s%d.%s", prefix, j, suffix);
+
+		j++;
 	}
 
 	fnames->size = j;
@@ -197,7 +178,7 @@ int fnames_init(fnames_t *fnames, char *fname, char *prefix, char *suffix)
 	return 0;
 }
 
-void fnames_term(fnames_t *fnames)
+void free_file_container(file_container_t *fnames)
 {
 	int i;
 	for (i = 0; i < fnames->size; i++)
@@ -214,7 +195,7 @@ void fnames_term(fnames_t *fnames)
 	pthread_mutex_destroy(&fnames->lock);
 }
 
-int fnames_next(fnames_t *fnames, int *idx)
+int get_next_file_idx(file_container_t *fnames, int *idx)
 {
 	pthread_mutex_lock(&fnames->lock);
 	if (fnames->idx < fnames->size)

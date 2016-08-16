@@ -12,21 +12,20 @@ extern "C"
 int zip_compress(ctx_t *ctx, const char *src, const char *dst);
 int zip_uncompress(ctx_t *ctx, const char *src, const char *dst);
 
-typedef struct _fnames_t
+typedef struct _file_container_t
 {
 	char **srcs;
 	char **dsts;
 	int idx;
 	int size;
-	int num; //size:[0, num], idx~[0, size]
+	int fileNum; //size:[0, fileNum], idx~[0, size]
 	pthread_mutex_t lock;
-} fnames_t;
+} file_container_t;
 
-int fnames_init(fnames_t *fnames, char *fname, char *prefix, char *suffix);
-void fnames_term(fnames_t *fnames);
-void fnames_print(fnames_t *fnames);
-
-int fnames_next(fnames_t *fnames, int *idx);
+int init_file_container(file_container_t *file_container, char *file_list_descriptor, char *prefix, char *suffix);
+void free_file_container(file_container_t *file_container);
+void print_file_container_info(file_container_t *fnames);
+int get_next_file_idx(file_container_t *fnames, int *idx);
 
 ///////////////////////////////////////////////////////////////
 #ifdef __cplusplus

@@ -13,7 +13,7 @@ typedef struct _my_args_t
 {
 	int idx;
 	char *prefix;
-	fnames_t *fnames;
+	file_container_t *fnames;
 	ctx_t nums;
 } margs_t;
 
@@ -29,7 +29,7 @@ void *worker_compress(void *arg)
 
 	margs_t *args = (margs_t*) arg;
 	ctx_t *ctx = &(args->nums);
-	fnames_t *fnames = args->fnames;
+	file_container_t *fnames = args->fnames;
 	int idx = args->idx;
 
 	sprintf(header, "thread %d", idx);
@@ -39,7 +39,7 @@ void *worker_compress(void *arg)
 	if (point < 10)
 		point = 10;
 
-	while (fnames_next(fnames, &jdx) > -1)
+	while (get_next_file_idx(fnames, &jdx) > -1)
 	{
 		reset_context(&ctx1);
 
@@ -68,7 +68,7 @@ void *worker_compress(void *arg)
 
 void *worker_uncompress(void *arg)
 {
-	int ret, jdx;
+	int ret, file_idx;
 	uint32_t count = 0;
 	uint32_t point = 0;
 	char header[128] =
@@ -77,7 +77,7 @@ void *worker_uncompress(void *arg)
 
 	margs_t *args = (margs_t*) arg;
 	ctx_t *ctx = &(args->nums);
-	fnames_t *fnames = args->fnames;
+	file_container_t *fnames = args->fnames;
 	int idx = args->idx;
 
 	sprintf(header, "thread %d", idx);
@@ -87,10 +87,10 @@ void *worker_uncompress(void *arg)
 	if (point < 10)
 		point = 10;
 
-	while (fnames_next(fnames, &jdx) > -1)
+	while (get_next_file_idx(fnames, &file_idx) > -1)
 	{
 		reset_context(&ctx2);
-		ret = zip_uncompress(&ctx2, fnames->srcs[jdx], fnames->dsts[jdx]);
+		ret = zip_uncompress(&ctx2, fnames->srcs[file_idx], fnames->dsts[file_idx]);
 		if (ret != 0)
 		{
 			continue;
@@ -112,7 +112,7 @@ void *worker_uncompress(void *arg)
 }
 
 /* -------------------------------------------- */
-int64_t handle_them(fnames_t *fnames, int num, int type)
+int64_t handle_them(file_container_t *fnames, int num, int type)
 {
 	int i;
 	ctx_t total;
@@ -154,37 +154,37 @@ int64_t handle_them(fnames_t *fnames, int num, int type)
 
 int start_job(int argc, char *argv[], int jtype)
 {
-	fnames_t fnames;
-	double begin, end, diff, rate, num;
-	struct timeval tim;
+	file_container_t fnames;
+	double start, end, diff, rate, num;
+	struct timeval tm;
 
 	int threads = 1;
 	if (argc > 4)
 		threads = atoi(argv[4]);
 
 	if (jtype == 1)
-		fnames_init(&fnames, argv[2], argv[3], "uz");
+		init_file_container(&fnames, argv[2], argv[3], "uz");
 	else
-		fnames_init(&fnames, argv[2], argv[3], "nz");
+		init_file_container(&fnames, argv[2], argv[3], "nz");
 
-	fnames_print(&fnames);
+	print_file_container_info(&fnames);
 
-	gettimeofday(&tim, NULL);
-	begin = tim.tv_sec + (tim.tv_usec / 1000000.0);
+	gettimeofday(&tm, NULL);
+	start = tm.tv_sec + (tm.tv_usec / 1000000.0);
 
 	num = handle_them(&fnames, threads, jtype);
 
-	gettimeofday(&tim, NULL);
-	end = tim.tv_sec + (tim.tv_usec / 1000000.0);
+	gettimeofday(&tm, NULL);
+	end = tm.tv_sec + (tm.tv_usec / 1000000.0);
 
-	diff = end - begin;
+	diff = end - start;
 	rate = ((double) num) / (diff * 1024 * 1024);
 
 	num = num / (1024.0 * 1024.0 * 1024);
 	printf("num:%0.4f GBytes, time:%0.2f seconds, %0.2fMB/s\n", num, diff,
 			rate);
 
-	fnames_term(&fnames);
+	free_file_container(&fnames);
 	return 0;
 }
 
