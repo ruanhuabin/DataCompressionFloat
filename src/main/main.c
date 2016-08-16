@@ -1,9 +1,4 @@
-/***********************************************
- Author: LT songbin
- Created Time: Wed Jul 10 22:36:21 2013
- File Name: main.c
- Description: 
- **********************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,6 +17,7 @@ typedef struct _my_args_t
 	ctx_t nums;
 } margs_t;
 
+/*Each thread will called this function*/
 void *worker_compress(void *arg)
 {
 	int ret, jdx;
@@ -38,21 +34,22 @@ void *worker_compress(void *arg)
 
 	sprintf(header, "thread %d", idx);
 
-	init_ctx(&ctx1);
+	init_context(&ctx1);
 	point = fnames->size / 10 + 1;
 	if (point < 10)
 		point = 10;
 
 	while (fnames_next(fnames, &jdx) > -1)
 	{
-		ctx_reset(&ctx1);
-		ret = learn_compress(&ctx1, fnames->srcs[jdx], fnames->dsts[jdx],
-				fnames->dims[jdx]);
-		if (ret != 0)
-			continue;
+		reset_context(&ctx1);
 
-		//print the speeds for current file
-		//print_ctx(&ctx1);
+		ret = zip_compress(&ctx1, fnames->srcs[jdx], fnames->dsts[jdx]);
+
+		if (ret != 0)
+		{
+			continue;
+		}
+
 		print_context_info(&ctx1, "Context Info in Worker Compress");
 		update_context(ctx, &ctx1);
 
@@ -85,17 +82,19 @@ void *worker_uncompress(void *arg)
 
 	sprintf(header, "thread %d", idx);
 
-	init_ctx(&ctx2);
+	init_context(&ctx2);
 	point = fnames->size / 10 + 1;
 	if (point < 10)
 		point = 10;
 
 	while (fnames_next(fnames, &jdx) > -1)
 	{
-		ctx_reset(&ctx2);
-		ret = nz_uncompress(&ctx2, fnames->srcs[jdx], fnames->dsts[jdx]);
+		reset_context(&ctx2);
+		ret = zip_uncompress(&ctx2, fnames->srcs[jdx], fnames->dsts[jdx]);
 		if (ret != 0)
+		{
 			continue;
+		}
 
 		count += 1;
 
@@ -105,8 +104,6 @@ void *worker_uncompress(void *arg)
 		update_context(ctx, &ctx2);
 		if (count % point == 0)
 		{
-			//print the speeds for all the files
-			//ctx_print_more(ctx, header);
 			print_context_info(ctx, header);
 		}
 	}
@@ -132,7 +129,7 @@ int64_t handle_them(fnames_t *fnames, int num, int type)
 	{
 		args[i].idx = i;
 		args[i].fnames = fnames;
-		init_ctx(&(args[i].nums));
+		init_context(&(args[i].nums));
 
 		if (type == 0)
 			pthread_create(&(threads[i]), NULL, worker_compress, &args[i]);
@@ -140,7 +137,7 @@ int64_t handle_them(fnames_t *fnames, int num, int type)
 			pthread_create(&(threads[i]), NULL, worker_uncompress, &args[i]);
 	}
 
-	init_ctx(&total);
+	init_context(&total);
 	for (i = 0; i < num; i++)
 	{
 		pthread_join(threads[i], NULL);
@@ -152,7 +149,7 @@ int64_t handle_them(fnames_t *fnames, int num, int type)
 
 	free(threads);
 	free(args);
-	return total.fsz;
+	return total.allFileSize;
 }
 
 int start_job(int argc, char *argv[], int jtype)
@@ -191,41 +188,6 @@ int start_job(int argc, char *argv[], int jtype)
 	return 0;
 }
 
-int64_t compress_them(fnames_t *fnames, int num)
-{
-	int i;
-	ctx_t total;
-	margs_t *args;
-	pthread_t *threads;
-
-	args = malloc(sizeof(margs_t) * num);
-	memset(args, 0, sizeof(margs_t) * num);
-
-	threads = malloc(sizeof(pthread_t) * num);
-	memset(threads, 0, sizeof(pthread_t) * num);
-
-	for (i = 0; i < num; i++)
-	{
-		args[i].idx = i;
-		args[i].fnames = fnames;
-		init_ctx(&(args[i].nums));
-		pthread_create(&(threads[i]), NULL, worker_compress, &args[i]);
-	}
-
-	init_ctx(&total);
-	for (i = 0; i < num; i++)
-	{
-		pthread_join(threads[i], NULL);
-		update_context(&total, &(args[i].nums));
-	}
-
-	//ctx_print_more(&total, "Overall");
-	print_context_info(&total, "[Overall] Context Info In compress_them()");
-
-	free(threads);
-	free(args);
-	return total.fsz;
-}
 
 void print_usage(const char *cmd)
 {
@@ -258,7 +220,7 @@ int get_opt(int argc, char *argv[])
 		}
 		printf("[only compress files]\n");
 		start_job(argc, argv, 0);
-		//do_compress_only(argc, argv);
+
 	}
 	else if (strcmp(argv[1], "-ou") == 0)
 	{

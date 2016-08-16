@@ -49,11 +49,11 @@ struct _mzip_t
 	uint32_t fnum;
 	uint64_t fsz;
 	uint64_t zfsz;
-	double time1; //zip
+	double compressTime; //zip
 	double time2; //unzip
 };
 
-int mzip_init(mzip_t *zip, uint32_t chk, ztype_t ztype, int strategy);
+int init_mrc_zip_stream(mzip_t *zip, uint32_t chk, ztype_t ztype, int strategy);
 void mzip_term(mzip_t *zip);
 
 int mzip_def(mzip_t *zip, char **p, int *len);
@@ -109,8 +109,8 @@ void unpack_header(const char *buf, btype_t *btype, uint32_t *len);
 void statis_ztime(mzip_t *zip, uint32_t zchk, double begin, double end);
 void statis_time(mzip_t *zip, uint64_t chk, double begin, double end);
 
-void print_result(mzip_t *zip);
-void print_results(mzip_t *zips, int n);
+
+
 void display_results(mzip_t *zips, int n, const char *hintMsg);
 
 void init_zips(mzip_t zips[], int chk);

@@ -7,8 +7,7 @@
 #include "nzips.h"
 #include "constant.h"
 
-
-int bitsMask[] =
+static int bitsMaskTable[] =
 {     0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFFFC, 0xFFFFFFF8, 0xFFFFFFF0, 0xFFFFFFE0,
 		0xFFFFFFC0, 0xFFFFFF80, 0xFFFFFF00, 0xFFFFFE00, 0xFFFFFC00, 0xFFFFF800,
 		0xFFFFF000, 0xFFFFE000, 0xFFFFC000, 0xFFFF8000, 0xFFFF0000, 0xFFFE0000,
@@ -17,18 +16,7 @@ int bitsMask[] =
 		0xC0000000, 0x80000000, 0x00000000
 };
 
-/* ---------------- aulix ----------------- */
-void init_zips(mzip_t zips[], int chk)
-{
 
-	/**
-	 *  Initial 4 zips to compress 4 byte stream in float number sequence
-	 */
-	mzip_init(&zips[0], chk, ZLIB_DEF, ZIP_FAST);
-	mzip_init(&zips[1], chk, ZLIB_DEF, ZIP_FAST);
-	mzip_init(&zips[2], chk, ZLIB_DEF, ZIP_FAST);
-	mzip_init(&zips[3], chk, ZLIB_DEF, ZIP_FAST);
-}
 
 void term_zips(mzip_t zips[])
 {
@@ -37,41 +25,37 @@ void term_zips(mzip_t zips[])
 		mzip_term(&zips[i]);
 }
 
-/* ------- these two for uncompress ---------- 
- *  unzip_1 is for uncompress_0 and 1
- *  unzip_3 is for uncompress_2 and 3
- */
-void _unzip_1(FILE *fin, mzip_t zips[], char *outs[], uint32_t chk)
+void uncompress_byte_stream(FILE *fin, mzip_t zips[], char *outs[], uint32_t chk)
 {
-	int j;
+	int i;
 	char *p;
 	char bhd[HDR_SIZE * 4] =
 	{ 0 };
 	btype_t btypes[4];
 
-	double begin; //Timing
+	double start;
 
-	//zip-block headers
+	/*Read header in every block*/
 	fread(bhd, 1, HDR_SIZE * 4, fin);
-	for (j = 0, p = bhd; j < 4; j++)
+	for (i = 0, p = bhd; i < 4; i++)
 	{
-		unpack_header(p, &(btypes[j]), &(zips[j].inlen));
+		/*In every block, the sum of each byte stream length and HDR_SIZE will be saved in zips[j].inlen*/
+		unpack_header(p, &(btypes[i]), &(zips[i].inlen));
 		p += HDR_SIZE;
-
-		fread(zips[j].in, 1, zips[j].inlen, fin);
+		fread(zips[i].in, 1, zips[i].inlen, fin);
 	}
 
-	for (j = 0; j < 4; j++)
+	for (i = 0; i < 4; i++)
 	{
-		begin = now_sec();
-		zips[j].unzipfun(&(zips[j]), btypes[j], chk, &(outs[j]));
-		zips[j].time2 += (now_sec() - begin);
+		start = now_sec();
+		/*uncompress each byte stream, the uncompress data will be saved in outs[i]*/
+		zips[i].unzipfun(&(zips[i]), btypes[i], chk, &(outs[i]));
+		zips[i].time2 += (now_sec() - start);
 	}
-
 	return;
 }
 
-void maskBitsEx(float *buffer, int startIndex, int num, const int bitsToErase,
+void apply_mask(float *buffer, int startIndex, int num, const int bitsToErase,
 		int isFirstChk)
 {
 
@@ -89,13 +73,12 @@ void maskBitsEx(float *buffer, int startIndex, int num, const int bitsToErase,
 	for (int i = startIndex; i < num; i++)
 	{
 
-		*p = (*p) & bitsMask[bitsToErase];
+		*p = (*p) & bitsMaskTable[bitsToErase];
 		p = p + 1;
 	}
 }
 
-void splitFloatsEx(float *buf, int num, char *zins[], int bitsToMask,
-		int isFirstChk)
+void split_float_to_byte_stream(float *buf, int num, char *zins[], int bitsToMask,	int isFirstChk)
 {
 	char *p0, *p1, *p2, *p3;
 	char *p = (char*) buf;
@@ -108,7 +91,10 @@ void splitFloatsEx(float *buf, int num, char *zins[], int bitsToMask,
 	/**
 	 *  1024 Bytes in the first chunk is the header info in MRC file, we should not apply lossy compression to it
 	 */
-	maskBitsEx(buf, 0, num, bitsToMask, isFirstChk);
+	apply_mask(buf, 0, num, bitsToMask, isFirstChk);
+	/**
+	 * Make zips[i] to corresponding byte stream
+	 */
 	for (int i = 0; i < num; i++)
 	{
 		*p0++ = *p++;
@@ -118,7 +104,7 @@ void splitFloatsEx(float *buf, int num, char *zins[], int bitsToMask,
 	}
 }
 
-void _unconvert0(float *buf, int num, char *zouts[])
+void merge_byte_to_float_stream(float *buf, int num, char *zouts[])
 {
 	int i;
 	char *p0, *p1, *p2, *p3;
@@ -138,64 +124,61 @@ void _unconvert0(float *buf, int num, char *zouts[])
 	return;
 }
 
-int run_decompress(FILE *fin, ctx_t *ctx, nz_header *hd, FILE *fout)
+int run_uncompress(FILE *fin, ctx_t *ctx, mrczip_header_t *hd, FILE *fout)
 {
 	uint32_t i, j, num;
-	uint32_t chk;
+	uint32_t chk_size;
 	uint64_t fsz;
 	float *buf;
-
-	mzip_t zips[4]; /* 4 float zips, 1 zero zip */
+	mzip_t zips[4]; /* points to 4 bytes stream in float stream */
 	char *outs[4];
-
-	double begin; // Timing
+	double start;
 
 	fsz = hd->fsz / 4;
-	chk = hd->chk;
-
-	begin = now_sec();
-
-	buf = (float*) malloc(sizeof(float) * chk);
+	chk_size = hd->chk;
+	start = now_sec();
+	buf = (float*) malloc(sizeof(float) * chk_size);
 
 	for (j = 0; j < 4; j++)
-		mzip_init(&(zips[j]), chk, hd->ztypes[j] + 1, 0);
+		init_mrc_zip_stream(&(zips[j]), chk_size, hd->ztypes[j] + 1, 0);
 
-	ctx->unzipTime += (now_sec() - begin);
+	ctx->unzipTime += (now_sec() - start);
 
-	num = fsz / chk;
+	/*Calculate how many chunks we have*/
+	num = fsz / chk_size;
 	for (i = 0; i < num; i++)
 	{
-		_unzip_1(fin, zips, outs, chk);
-		_unconvert0(buf, chk, outs);
+		uncompress_byte_stream(fin, zips, outs, chk_size);
+		merge_byte_to_float_stream(buf, chk_size, outs);
 
 #ifdef _OUTPUT_UNZIP_
-		fwrite(buf, sizeof(float), chk, fout);
+		fwrite(buf, sizeof(float), chk_size, fout);
 #endif
 	}
 
-	chk = fsz % chk;
-	if (chk > 0)
+	chk_size = fsz % chk_size;
+	if (chk_size > 0)
 	{
-		_unzip_1(fin, zips, outs, chk);
+		uncompress_byte_stream(fin, zips, outs, chk_size);
 
-		begin = now_sec();
-		_unconvert0(buf, chk, outs);
-		ctx->unzipTime += (now_sec() - begin);
+		start = now_sec();
+		merge_byte_to_float_stream(buf, chk_size, outs);
+		ctx->unzipTime += (now_sec() - start);
 
 #ifdef _OUTPUT_UNZIP_
-		fwrite(buf, sizeof(float), chk, fout);
+		fwrite(buf, sizeof(float), chk_size, fout);
 #endif
 	}
 
 	free(buf);
 
 #ifdef _PRINT_ZIPS_
-	displayResults(zips, 4, "Decompress");
+	print_result(zips, 4, "Decompress Result Info");
 #endif
 	for (j = 0; j < 4; j++)
 	{
-		ctx->fsz += zips[j].fsz;
-		ctx->zfsz += zips[j].zfsz;
+		ctx->allFileSize += zips[j].fsz;
+		ctx->allZipFileSize += zips[j].zfsz;
 		ctx->unzipTime += zips[j].time2;
 		mzip_term(&(zips[j]));
 	}
@@ -206,8 +189,8 @@ int run_decompress(FILE *fin, ctx_t *ctx, nz_header *hd, FILE *fout)
 int run_compress(FILE *fin, ctx_t *ctx, FILE *fout, const int bitsToMask)
 {
 	int j;
-	int num, chk;
-	nz_header hd;
+	int num;
+	mrczip_header_t hd;
 #ifdef _OUTPUT_ZIP_
 	char bhd[4 * HDR_SIZE] = 	{ 0 };
 #endif
@@ -219,31 +202,45 @@ int run_compress(FILE *fin, ctx_t *ctx, FILE *fout, const int bitsToMask)
 
 	double begin, zbegin; //for timing
 
-	chk = CHUNK_SIZE;
-
 	begin = now_sec();
-	buf = (float*) malloc(sizeof(float) * chk);
+	buf = (float*) malloc(sizeof(float) * CHUNK_SIZE);
 	if (buf == NULL)
 	{
-		fprintf(stderr, "[ERROR]: fail to alloc mem\n");
+		fprintf(stderr, "[%s:%d] ERROR: fail to alloc mem\n", __FILE__, __LINE__);
 		exit(-1);
 	}
+	/*
+	 * Firstly, we init 4 compressor for each byte of mrc float stream
+	 * */
+	for(int i = 0; i < 4; i ++)
+	{
+		init_mrc_zip_stream(&zips[0], CHUNK_SIZE, ZLIB_DEF, ZIP_FAST);
+		init_mrc_zip_stream(&zips[1], CHUNK_SIZE, ZLIB_DEF, ZIP_FAST);
+		init_mrc_zip_stream(&zips[2], CHUNK_SIZE, ZLIB_DEF, ZIP_FAST);
+		init_mrc_zip_stream(&zips[3], CHUNK_SIZE, ZLIB_DEF, ZIP_FAST);
+	}
 
-	init_zips(zips, chk);
+	/*
+	 * Make zins[i] point to compressed data buffer of 4 zip streams
+	 * */
 	for (j = 0; j < 4; j++)
+	{
 		zins[j] = zips[j].zin;
+	}
 
 	/* begin to write zip file header */
 	init_mrczip_header(&hd, 0);
-	hd.chk = chk;
+	hd.chk = CHUNK_SIZE;
 
 	for (j = 0; j < 4; j++)
+	{
 		hd.ztypes[j] = zips[j].ztype;
+	}
 
 	ctx->zipTime += (now_sec() - begin);
 	hd.fsz = get_file_size(fin);
 
-	num = fread(buf, sizeof(uint32_t), chk, fin);
+	num = fread(buf, sizeof(uint32_t), CHUNK_SIZE, fin);
 
 	/**
 	 *  if we have  data need to be compressed, we will firstly write header into zip file, the zip file format is defined as following:
@@ -259,23 +256,15 @@ int run_compress(FILE *fin, ctx_t *ctx, FILE *fout, const int bitsToMask)
 	if (num > 0)
 	{
 #ifdef _OUTPUT_ZIP_ 
-		nz_header_write(fout, &hd);
+		write_mrczip_header(fout, &hd);
 #endif
 	}
 
 	int isFirstChk = 1;
 	while (num > 0)
 	{
-
 		begin = now_sec();
-		/*
-		 *_convert0(buf, num, zins);
-		 */
-		/*
-		 *splitFloats(buf, num, zins, bitsToMask);
-		 */
-		splitFloatsEx(buf, num, zins, bitsToMask, isFirstChk);
-
+		split_float_to_byte_stream(buf, num, zins, bitsToMask, isFirstChk);
 		/**
 		 *  We have processed the first chunk, so from next loop, this flag should be false
 		 */
@@ -286,26 +275,6 @@ int run_compress(FILE *fin, ctx_t *ctx, FILE *fout, const int bitsToMask)
 		 *  TODO:we can select the compress method for every byte stream here, for example:
 		 *  set the corresponding method value  in hd.ztypes[j]
 		 */
-
-		//adapt: select the compressor
-		/*
-		 *        if(flag == 0)
-		 *        {
-		 *            begin = now_sec();
-		 *            for(j = 0; j < ADAPT_NUMZ; j++)
-		 *            {
-		 *                mzip_def_test0(&(zips[j]));
-		 *                hd.ztypes[j] = zips[j].ztype;
-		 *            }
-		 *
-		 *            ctx->time1 += (now_sec() - begin);
-		 *#ifdef _OUTPUT_ZIP_
-		 *            nz_header_write(fout, &hd);
-		 *#endif
-		 *            flag = 1;
-		 *        }
-		 */
-		//end of select compressors
 		begin = now_sec();
 		for (j = 0; j < 4; j++)
 		{
@@ -320,12 +289,12 @@ int run_compress(FILE *fin, ctx_t *ctx, FILE *fout, const int bitsToMask)
 			 *    the length of each compressed byte stream is stored in zlens[0..3]
 			 */
 			zips[j].zipfun(&(zips[j]), &zouts[j], &zlens[j]);
-			zips[j].time1 += (now_sec() - zbegin);
+			//mzlib_def(&(zips[j]), &zouts[j], &zlens[j]);
+			zips[j].compressTime += (now_sec() - zbegin);
 		}
 		ctx->zipTime += (now_sec() - begin);
 
 #ifdef _OUTPUT_ZIP_
-
 		/**
 		 * The first 4 bytes data in zouts[j][0..3] is the length of each compressed byte stream, we extracted from zouts[0..3] respectly, and write the the header of each compress blocked
 		 */
@@ -341,20 +310,20 @@ int run_compress(FILE *fin, ctx_t *ctx, FILE *fout, const int bitsToMask)
 			fwrite(zouts[j] + HDR_SIZE, 1, zlens[j] - HDR_SIZE, fout);
 #endif
 
-		num = fread(buf, sizeof(float), chk, fin);
+		num = fread(buf, sizeof(float), CHUNK_SIZE, fin);
 	}
 
 	free(buf);
 
 #ifdef _PRINT_ZIPS_
-	displayResults(zips, 4, "Compression");
+	print_result(zips, 4, "Compression Summary Result");
 #endif
 
 	/**
 	 *  ctx->zfsz stored  the sum of the length of each compressed byte stream
 	 */
 	for (j = 0; j < 4; j++)
-		ctx->zfsz += zips[j].zfsz;
+		ctx->allZipFileSize += zips[j].zfsz;
 
 	for (j = 0; j < 4; j++)
 		mzip_term(&zips[j]);

@@ -269,13 +269,13 @@ int mzlib_inf(mzip_t *zip, btype_t btype, int len, char **p)
 
 /*-------- mzip --------*/
 
-int mzip_init(mzip_t *zip, uint32_t chk, ztype_t ztype, int strategy)
+int init_mrc_zip_stream(mzip_t *zip, uint32_t chk, ztype_t ztype, int strategy)
 {
 	zip->ztype = ztype;
 	switch (ztype)
 	{
 	case ZLIB_DEF:
-		zip->zipper = new_zlib_def(LEVEL, strategy);
+		zip->zipper = new_zlib_def(ZIP_COMPRESS_LEVEL, strategy);
 		zip->zipfun = mzlib_def;
 		zip->unzipfun = NULL;
 		break;
@@ -321,7 +321,7 @@ int mzip_init(mzip_t *zip, uint32_t chk, ztype_t ztype, int strategy)
 	zip->fnum = 0;
 	zip->fsz = 0;
 	zip->zfsz = 0;
-	zip->time1 = 0.0;
+	zip->compressTime = 0.0;
 	zip->time2 = 0.0;
 	return 0;
 }
@@ -371,11 +371,9 @@ void unpack_header(const char *nbuf, btype_t *btype, uint32_t *len)
 	*btype = (buf[3] & 0x80) >> 7;
 	*len = buf[0] | (buf[1] << 8) | (buf[2] << 16) | ((buf[3] & 0x7f) << 24);
 
-	//if(*len == 0)
-	//  *len = MAX_BLOCK_SIZE;
 }
 
-void displayResults(mzip_t *zips, int n, const char *hintMsg)
+void print_result(mzip_t *zips, int n, const char *hintMsg)
 {
 	int i;
 	double m;
@@ -410,7 +408,7 @@ void displayResults(mzip_t *zips, int n, const char *hintMsg)
 		fsz += zips[i].fsz;
 		zfsz += zips[i].zfsz;
 
-		zipTime += zips[i].time1;
+		zipTime += zips[i].compressTime;
 		unzipTime += zips[i].time2;
 
 		compressRatio = (double) (zips[i].zfsz) / (double) (zips[i].fsz);

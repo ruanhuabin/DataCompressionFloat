@@ -9,107 +9,35 @@ extern "C"
 #include <stdio.h>
 #include <stdint.h>
 #include <nzips.h>
-/* ------------- predictor types -----------------*/
-typedef enum
-{
-	LTIME = 0, LPOS, LORENZO, STEADY, UNSTEADY, PRE_COUNT
-} prediction_t;
-extern char *names[];
 
-/* ------------------ map -------------------*/
-typedef struct map_t
-{
-	unsigned char **map;
-	uint32_t dx;
-	uint32_t dy;
 
-	uint32_t zcnt;          //steady points count;
-	char type;             //LTIME, LPOS, or LORENZO
-	float stat[PRE_COUNT];  // no use
-} map_t;
-
-int map_init(map_t *map, unsigned dx, unsigned dy);
-void map_term(map_t *map);
-void map_print(map_t *map);
-void map_statis(map_t *map, float stat[]);
-int map_write(FILE *fout, map_t *map);
-int map_read(FILE *fin, map_t *map);
-
-void map_convert(map_t *map);
-char map_decision(map_t *map);
-
-/* ------------------ front -------------------*/
-typedef struct front_t
-{
-	unsigned dx, dy;
-
-	float **a0;
-	float **a1;
-} front_t;
-
-void front_init(front_t *front, unsigned dx, unsigned dy);
-void front_term(front_t *front);
-void front_reset(front_t *front);
-void front_switch(front_t *front);
-void front_push(front_t *front, unsigned y, unsigned x, float val);
-
-/*  predictors  */
-float front_2d(front_t *front, unsigned y, unsigned x);
-/* last position: j-1 */
-float front_lpos(front_t *front, unsigned y, unsigned x);
-/* last time, same position */
-float front_ltime(front_t *front, unsigned y, unsigned x);
-/* lorenzo prediction */
-float front_lorenzo(front_t *front, unsigned y, unsigned x);
-
-/* ------------------ front -------------------*/
 typedef struct _context_t
 {
-	uint32_t fnum;
-	uint64_t fsz;
-	uint64_t zfsz;
+	uint32_t fileCount;
+	uint64_t allFileSize;
+	uint64_t allZipFileSize;
 
 	double zipTime; //zip ztime;
 	double unzipTime; //unzip uztime;
 } ctx_t;
 
-void init_ctx(ctx_t *ctx);
-void ctx_reset(ctx_t *ctx);
+void init_context(ctx_t *ctx);
+void reset_context(ctx_t *ctx);
 void update_context(ctx_t *dst, ctx_t *src);
 void print_ctx(ctx_t *ctx);
 void ctx_print_more(ctx_t *ctx, const char *prompt);
 
-/* ------------------ front -------------------*/
-typedef struct _nz_header_t
+
+typedef struct _mrczip_header_t
 {
 	uint64_t fsz;
 	uint32_t chk;
 	char type; //compress strategy
-	char ztypes[5]; //compress method for each byte stream
-} nz_header;
+	char ztypes[4]; //compress method for each byte stream
+} mrczip_header_t;
 
-void init_mrczip_header(nz_header *hd, char type);
-void nz_header_term(nz_header *hd);
-
-void nz_header_print(nz_header *hd);
-int nz_header_read(FILE *fin, nz_header *hd);
-int nz_header_write(FILE *fout, nz_header *hd);
-
-/* ------------------ others -------------------*/
-/* v,p,m should be uint32_t */
-#define DO_XOR(v,p,m) (v ^ (p & m))
-#define DO_XOR4(v,p) (v ^ p)
-#define DO_XOR3(v,p) (v ^ (p & 0xFFFFFF00))
-#define DO_XOR2(v,p) (v ^ (p & 0xFFFF0000))
-#define DO_XOR1(v,p) (v ^ (p & 0xFF000000))
-
-void open_files(const char *fname, FILE* hdls[], int n);
-void close_files(FILE* hdls[], int n);
-unsigned float_xor(float real, float pred);
-unsigned float_xor2(float real, float pred);
-unsigned float_xor3(float real, float pred);
-unsigned float_xor4(float real, float pred);
-
+void init_mrczip_header(mrczip_header_t *hd, char type);
+int write_mrczip_header(FILE *fout, mrczip_header_t *hd);
 double now_sec();
 uint64_t get_file_size(FILE *fp);
 
@@ -120,24 +48,20 @@ uint64_t get_file_size(FILE *fp);
 /**
  *  Use to replace nz_header_read
  */
-int read_mrczip_header(FILE *fin, nz_header *hd);
+int read_mrczip_header(FILE *fin, mrczip_header_t *hd);
 
 /**
  *  Use to replace nz_header_print
  */
-void print_mrczip_header(nz_header *hd, const char *hintMsg);
+void print_mrczip_header(mrczip_header_t *hd, const char *hintMsg);
 
 /**
  *  Use to replace ctx_print
  */
 void print_context_info(ctx_t *ctx, const char *hintMsg);
-void displayResults(mzip_t *zips, int n, const char *hintMsg);
-
-#define TAG {printf("%s:%d\n", __FILE__,  __LINE__);}
+void print_result(mzip_t *zips, int n, const char *hintMsg);
 
 
-
-///////////////////////////////////////////////////////////////
 #ifdef __cplusplus
 }
 #endif

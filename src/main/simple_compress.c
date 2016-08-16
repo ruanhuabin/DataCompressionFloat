@@ -44,10 +44,10 @@ int mrc_compress(const char *src, const char *dst, const int bitsToMask)
 	}
 
 	ctx_t ctx;
-	init_ctx(&ctx);
+	init_context(&ctx);
 
-	ctx.fnum += 1;
-	ctx.fsz += get_file_size(fin);
+	ctx.fileCount += 1;
+	ctx.allFileSize += get_file_size(fin);
 
 	run_compress(fin, &ctx, fout, bitsToMask);
 
@@ -60,7 +60,7 @@ int mrc_uncompress(const char *src, const char *dst)
 {
 	FILE *fin, *fout;
 	ctx_t ctx;
-	nz_header hd;
+	mrczip_header_t hd;
 
 	fin = fopen(src, "rb");
 	fout = fopen(dst, "wb");
@@ -70,13 +70,13 @@ int mrc_uncompress(const char *src, const char *dst)
 		return -1;
 	}
 
-	init_ctx(&ctx);
-	ctx.fnum += 1;
+	init_context(&ctx);
+	ctx.fileCount += 1;
 	init_mrczip_header(&hd, 0);
 
 	read_mrczip_header(fin, &hd);
 	print_mrczip_header(&hd, "Header Info in Decompression");
-	run_decompress(fin, &ctx, &hd, fout);
+	run_uncompress(fin, &ctx, &hd, fout);
 	print_context_info(&ctx, "Contex Info after Decompression");
 	fclose(fout);
 	fclose(fin);

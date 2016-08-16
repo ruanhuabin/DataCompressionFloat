@@ -29,6 +29,7 @@
 							<tool id="org.eclipse.cdt.build.core.settings.holder.1307127451" name="GNU C" superClass="org.eclipse.cdt.build.core.settings.holder">
 								<option id="org.eclipse.cdt.build.core.settings.holder.incpaths.1230713873" name="Include Paths" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/include"/>
+									<listOptionValue builtIn="false" value="/root/datacompression/DataCompressionFloat/src/include"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.519020847" languageId="org.eclipse.cdt.core.gcc" languageName="GNU C" sourceContentType="org.eclipse.cdt.core.cSource,org.eclipse.cdt.core.cHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>

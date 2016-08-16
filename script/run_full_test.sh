@@ -37,7 +37,7 @@ function compress_and_uncompress()
     inputFileSuffix=.`echo $inputFileName | cut -d . -f 2`
 
     inputFile=$inputFilePrefix$inputFileSuffix
-    outputFile=ys_${inputFilePrefix}_${timestamp}${inputFileSuffix}
+    outputFile=ys_${inputFilePrefix}_${timestamp}_mask${bitsToMask}bits${inputFileSuffix}
     echo >&2 "output file name: $outputFile"
 
     inputFilePath=$projectRoot/data/${inputFile}

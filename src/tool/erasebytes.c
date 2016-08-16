@@ -24,7 +24,7 @@
 #include <stdarg.h>
 #include <syslog.h>
 
-int bitsMask[] = { 0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFFFC, 0xFFFFFFF8, 0xFFFFFFF0,
+int bitsMaskTable[] = { 0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFFFC, 0xFFFFFFF8, 0xFFFFFFF0,
         0xFFFFFFE0, 0xFFFFFFC0, 0xFFFFFF80, 0xFFFFFF00, 0xFFFFFE00, 0xFFFFFC00,
         0xFFFFF800, 0xFFFFF000, 0xFFFFE000, 0xFFFFC000, 0xFFFF8000, 0xFFFF0000,
         0xFFFE0000, 0xFFFC0000, 0xFFF80000, 0xFFF00000, 0xFFE00000, 0xFFC00000,
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
              **p = '\0';
              *p = p + sizeof(float);
              */
-            *p = (*p) & bitsMask[bitsToErase];
+            *p = (*p) & bitsMaskTable[bitsToErase];
             p = p + 1;
         }
 

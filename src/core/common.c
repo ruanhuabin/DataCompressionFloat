@@ -1,12 +1,9 @@
+
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
 #include <stdint.h>
-
 #include "common.h"
-
-char *names[] =
-{ "ltime", "lpos", "lorenzo", "steady", "unsteady" };
 
 uint64_t get_file_size(FILE *fp)
 {
@@ -26,25 +23,25 @@ uint64_t get_file_size(FILE *fp)
 
 double now_sec()
 {
-	struct timeval tim;
-	gettimeofday(&tim, NULL);
-	return (tim.tv_sec + (tim.tv_usec / 1000000.0));
+	struct timeval tm;
+	gettimeofday(&tm, NULL);
+	return (tm.tv_sec + (tm.tv_usec / 1000000.0));
 }
 
-void init_ctx(ctx_t *ctx)
+void init_context(ctx_t *ctx)
 {
-	ctx->fnum = 0;
-	ctx->fsz = 0;
-	ctx->zfsz = 0;
+	ctx->fileCount = 0;
+	ctx->allFileSize = 0;
+	ctx->allZipFileSize = 0;
 	ctx->zipTime = 0.0;
 	ctx->unzipTime = 0.0;
 }
 
-void ctx_reset(ctx_t *ctx)
+void reset_context(ctx_t *ctx)
 {
-	ctx->fnum = 0;
-	ctx->fsz = 0;
-	ctx->zfsz = 0;
+	ctx->fileCount = 0;
+	ctx->allFileSize = 0;
+	ctx->allZipFileSize = 0;
 	ctx->zipTime = 0.0;
 	ctx->unzipTime = 0.0;
 }
@@ -69,7 +66,7 @@ void print_context_info(ctx_t *ctx, const char *hintMsg)
 	double unzipTime = ctx->unzipTime;
 	double time = zipTime > 0.001 ? zipTime : unzipTime;
 
-	uint64_t fileSize = ctx->fsz;
+	uint64_t fileSize = ctx->allFileSize;
 
 	double speed = fileSize / (time * 1024.0 * 1024.0);
 
@@ -80,69 +77,38 @@ void print_context_info(ctx_t *ctx, const char *hintMsg)
 
 	sprintf(timeInfo, "%.4f%s", time, operation);
 
-	printf("%-*ld%-*ld%-*s%-*.*f\n", firstColumnLen, ctx->fsz, secondColumnLen,
-			ctx->zfsz, thirdColumnLen, timeInfo, fourthColumnLen, 4, speed);
+	printf("%-*ld%-*ld%-*s%-*.*f\n", firstColumnLen, ctx->allFileSize, secondColumnLen,
+			ctx->allZipFileSize, thirdColumnLen, timeInfo, fourthColumnLen, 4, speed);
 }
 
-void print_ctx(ctx_t *ctx)
-{
-	double m = 1024 * 1024.0;
-
-	printf("%lu\t%lu\t%.4f", ctx->fsz, ctx->zfsz,
-			(double) ctx->zfsz / ctx->fsz);
-
-	if (ctx->zipTime > 0.001)
-		printf("\t[%.2f", ctx->fsz / (m * ctx->zipTime));
-	else
-		printf("\t[%.2f", 0.0);
-
-	if (ctx->unzipTime > 0.001)
-		printf("\t%.2f]", ctx->fsz / (m * ctx->unzipTime));
-	else
-		printf("\t%.2f]", 0.0);
-
-	printf(" MB/s\n");
-}
-
-void ctx_print_more(ctx_t *ctx, const char *key)
-{
-	printf("-------------------------\n");
-	printf("[%s]:", key);
-	print_ctx(ctx);
-}
 
 void update_context(ctx_t *dst, ctx_t *src)
 {
-	dst->fnum += src->fnum;
-	dst->fsz += src->fsz;
-	dst->zfsz += src->zfsz;
+	dst->fileCount += src->fileCount;
+	dst->allFileSize += src->allFileSize;
+	dst->allZipFileSize += src->allZipFileSize;
 	dst->zipTime += src->zipTime;
 	dst->unzipTime += src->unzipTime;
 }
 
-void init_mrczip_header(nz_header *hd, char type)
+void init_mrczip_header(mrczip_header_t *hd, char type)
 {
 	hd->type = type;
 	hd->fsz = 0;
 	hd->chk = 0;
-	memset(hd->ztypes, 0, 5);
+	memset(hd->ztypes, 0, 4);
 }
 
-void nz_header_term(nz_header *hd)
-{
-}
 
-void print_mrczip_header(nz_header *hd, const char *hintMsg)
+void print_mrczip_header(mrczip_header_t *hd, const char *hintMsg)
 {
 
-	printf(
-			"[%s]: Original file size = %ld, chunk size = %d, compresstion type = %d\n",
+	printf("[%s]: Original file size = %ld, chunk size = %d, compresstion type = %d\n",
 			hintMsg, hd->fsz, hd->chk, hd->type);
 }
 
-int read_mrczip_header(FILE *fin, nz_header *hd)
+int read_mrczip_header(FILE *fin, mrczip_header_t *hd)
 {
-	int i;
 	if (fread(&(hd->fsz), sizeof(uint64_t), 1, fin) < 1)
 	{
 		fprintf(stderr, "[ERROR]:Failed to read file\n");
@@ -150,7 +116,7 @@ int read_mrczip_header(FILE *fin, nz_header *hd)
 	}
 	fread(&(hd->chk), sizeof(uint32_t), 1, fin);
 	fread(&(hd->type), sizeof(char), 1, fin);
-	for (i = 0; i < 5; i++)
+	for(int i = 0; i < 4; i++)
 	{
 		fread(&(hd->ztypes[i]), sizeof(char), 1, fin);
 	}
@@ -158,34 +124,14 @@ int read_mrczip_header(FILE *fin, nz_header *hd)
 	return 0;
 }
 
-int nz_header_read(FILE *fin, nz_header *hd)
+
+int write_mrczip_header(FILE *fout, mrczip_header_t *hd)
 {
-	int i;
 
-	if (fread(&(hd->fsz), sizeof(uint64_t), 1, fin) < 1)
-	{
-		TAG
-		;
-		fprintf(stderr, "[ERROR]:Failed to read file\n");
-		return -1;
-	}
-	fread(&(hd->chk), sizeof(uint32_t), 1, fin);
-	fread(&(hd->type), sizeof(char), 1, fin);
-	for (i = 0; i < 5; i++)
-	{
-		fread(&(hd->ztypes[i]), sizeof(char), 1, fin);
-	}
-
-	return 0;
-}
-
-int nz_header_write(FILE *fout, nz_header *hd)
-{
-	int i;
 	fwrite(&(hd->fsz), sizeof(uint64_t), 1, fout);
 	fwrite(&(hd->chk), sizeof(uint32_t), 1, fout);
 	fwrite(&(hd->type), sizeof(char), 1, fout);
-	for (i = 0; i < 5; i++)
+	for(int i = 0; i < 4; i++)
 	{
 		fwrite(&(hd->ztypes[i]), sizeof(char), 1, fout);
 	}

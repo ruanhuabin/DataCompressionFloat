@@ -13,34 +13,26 @@
 #include "workers.h"
 #include "adapt.h"
 
-int learn_compress(ctx_t *ctx, const char *src, const char *dst,
-		unsigned dims[])
+int zip_compress(ctx_t *ctx, const char *src, const char *dst)
 {
 	FILE *fin, *fout;
 
 	fin = fopen(src, "rb");
 	fout = fopen(dst, "wb");
-	if (fin == NULL || fout == NULL)
-	{
-		TAG
-		;
-		if (fin == NULL)
-			fprintf(stderr, "[ERROR]: fail open:%s\n", src);
-		else
-			fprintf(stderr, "[ERROR]: fail open:%s\n", dst);
 
-		return -1;
+	if (fin == NULL)
+	{
+		fprintf(stderr, "[%s:%d] ERROR: fail open:%s\n",  __FILE__, __LINE__, src);
+		exit(-1);
+	}
+	if(fout == NULL)
+	{
+		fprintf(stderr, "[%s:%d] ERROR: fail open:%s\n",  __FILE__, __LINE__, dst);
+		exit(-1);
 	}
 
-	//ctx_init(&mctx);
-	if (dims[3] > 1)
-	{
-		dims[1] = dims[1] * dims[2];
-		dims[2] = dims[3];
-	}
-
-	ctx->fnum += 1;
-	ctx->fsz += get_file_size(fin);
+	ctx->fileCount += 1;
+	ctx->allFileSize += get_file_size(fin);
 
 	run_compress(fin, ctx, fout, 0);
 
@@ -49,44 +41,38 @@ int learn_compress(ctx_t *ctx, const char *src, const char *dst,
 	return 0;
 }
 
-int nz_uncompress(ctx_t *ctx, const char *src, const char *dst)
+int zip_uncompress(ctx_t *ctx, const char *src, const char *dst)
 {
 	int ret;
 	FILE *fin, *fout;
-	nz_header hd;
+	mrczip_header_t hd;
 
-	fin = fopen(src, "rb");
-	fout = fopen(dst, "wb");
-	if (fin == NULL || fout == NULL)
+	if (fin == NULL)
 	{
-		TAG
-		;
-		fprintf(stderr, "[ERROR]: fail open:%s\n", src);
-		return -1;
+		fprintf(stderr, "[%s:%d] ERROR: fail open:%s\n",  __FILE__, __LINE__, src);
+		exit(-1);
+	}
+	if(fout == NULL)
+	{
+		fprintf(stderr, "[%s:%d] ERROR: fail open:%s\n",  __FILE__, __LINE__, dst);
+		exit(-1);
 	}
 
-	ctx->fnum += 1;
+	ctx->fileCount += 1;
 
 	init_mrczip_header(&hd, 0);
 
-	ret = nz_header_read(fin, &hd);
-	if (ret != 0)
-	{
-		nz_header_term(&hd);
+	ret = read_mrczip_header(fin, &hd);
+	if (ret != 0)	{
+
 		fclose(fout);
 		fclose(fin);
 		return -1;
 	}
 
-	//nz_header_print(&hd);
+	run_uncompress(fin, ctx, &hd, fout);
 
-	//TODO: debug only, remove it
-	//hd.type = 3;
 
-	run_decompress(fin, ctx, &hd, fout);
-
-	////ctx_print(ctx);
-	nz_header_term(&hd);
 	fclose(fout);
 	fclose(fin);
 	return 0;
@@ -160,9 +146,7 @@ void fnames_print(fnames_t *fnames)
 	int i;
 	for (i = 0; i < fnames->size; i++)
 	{
-		printf("%s:%s:", fnames->srcs[i], fnames->dsts[i]);
-		printf("%u %u %u %u\n", fnames->dims[i][0], fnames->dims[i][1],
-				fnames->dims[i][2], fnames->dims[i][3]);
+		printf("%s:%s\n", fnames->srcs[i], fnames->dsts[i]);
 	}
 
 }
@@ -187,7 +171,7 @@ int fnames_init(fnames_t *fnames, char *fname, char *prefix, char *suffix)
 
 	fnames->srcs = (char**) malloc(lines * sizeof(char*));
 	fnames->dsts = (char**) malloc(lines * sizeof(char*));
-	fnames->dims = (uint32_t**) malloc(lines * sizeof(uint32_t*));
+
 
 	fp = fopen(fname, "r");
 	for (i = 0, j = 0; i < lines; i++)
@@ -197,20 +181,10 @@ int fnames_init(fnames_t *fnames, char *fname, char *prefix, char *suffix)
 		{
 			fnames->srcs[j] = (char*) malloc(len + 1);
 			fnames->dsts[j] = (char*) malloc(256);
-			fnames->dims[j] = (uint32_t*) malloc(sizeof(uint32_t) * 4);
+
 
 			memcpy(fnames->srcs[j], pname, len);
 			sprintf(fnames->dsts[j], "%s%d.%s", prefix, j, suffix);
-
-			//if(prefix[0] == '/')
-			//  sprintf(fnames->dsts[j], "%s%d.%s", prefix, j, suffix);
-			//else
-			//  sprintf(fnames->dsts[j], "%s%d.%s", prefix, j, suffix);
-
-			fnames->dims[j][0] = dims[0];
-			fnames->dims[j][1] = dims[1];
-			fnames->dims[j][2] = dims[2];
-			fnames->dims[j][3] = dims[3];
 
 			j++;
 		}
@@ -230,12 +204,12 @@ void fnames_term(fnames_t *fnames)
 	{
 		free(fnames->srcs[i]);
 		free(fnames->dsts[i]);
-		free(fnames->dims[i]);
+
 	}
 
 	free(fnames->srcs);
 	free(fnames->dsts);
-	free(fnames->dims);
+
 
 	pthread_mutex_destroy(&fnames->lock);
 }

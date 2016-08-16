@@ -9,15 +9,13 @@ extern "C"
 #include <pthread.h>
 #include "common.h"
 
-int learn_compress(ctx_t *ctx, const char *src, const char *dst,
-		unsigned dims[]);
-int nz_uncompress(ctx_t *ctx, const char *src, const char *dst);
+int zip_compress(ctx_t *ctx, const char *src, const char *dst);
+int zip_uncompress(ctx_t *ctx, const char *src, const char *dst);
 
 typedef struct _fnames_t
 {
 	char **srcs;
 	char **dsts;
-	uint32_t **dims;
 	int idx;
 	int size;
 	int num; //size:[0, num], idx~[0, size]
