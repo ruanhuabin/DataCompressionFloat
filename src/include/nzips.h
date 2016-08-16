@@ -1,9 +1,3 @@
-/***********************************************
- Author: LT songbin
- Created Time: Wed Jun 26 23:34:47 2013
- File Name: nzips.h
- Description: 
- **********************************************/
 #ifndef _NZIPS_H_
 #define _NZIPS_H_
 

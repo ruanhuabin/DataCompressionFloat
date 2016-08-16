@@ -1,9 +1,3 @@
-/***********************************************
- Author: LT songbin
- Created Time: Tue 18 Jun 2013 04:52:16 PM CST
- File Name: compressors.h
- Description: 
- **********************************************/
 
 #ifndef _LT_WORKERS_H_
 #define _LT_WORKERS_H_

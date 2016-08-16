@@ -13,176 +13,6 @@
 #include "workers.h"
 #include "adapt.h"
 
-#define ZERO (0.0000002)
-#define MINI_PRE (0.00195)
-#define SUBF(a,b) (a>=b ? a-b:b-a)
-//#define PSUBF(a,b) (SUBF(a,b)/(a+ZERO))
-//#define EQUAL(a,b) (PSUBF(a,b) < ZERO)
-
-#ifndef TAG
-#define TAG {printf("%s:%d\n", __FILE__,  __LINE__);}
-#endif
-
-#define XOR_EQUAL(a,b) (((a)^(b)) < 1)
-#define XOR_PEQUAL(a,b) (((a)^(b)) < (1<<16))
-//#define XOR_PEQUAL(a,b) (!(((a)^(b)) & (0xFFFF0000)))
-/*-----------------------------------------*/
-
-void get_sample(unsigned dims[], int *off, int *len)
-{  
-  unsigned tmp;
-
-  *len = 100;
-  tmp = dims[2]/100;
-  if(tmp < 10)
-    *len = 10;
-
-  *off = dims[2]/10;
-}
-
-/*-----------------------------------------*/
-unsigned char eval_pre_XOR(float real, float pre[])
-{
-  uint32_t *pval = (uint32_t*)&real;
-  uint32_t *p = (uint32_t*)pre;
-
-  unsigned char i = LTIME;
-  if(SUBF(real, pre[i]) > SUBF(real, pre[LPOS]))
-    i = LPOS;
-  if(SUBF(real, pre[i]) > SUBF(real, pre[LORENZO]))
-    i = LORENZO;
-
-  if(!XOR_PEQUAL(*pval, p[i]))
-    i = UNSTEADY;
-
-  return i;
-}
-
-
-int learn(FILE *fin,
-          ctx_t *ctx, 
-          front_t *front, 
-          map_t *map, 
-          unsigned dims[])
-{
-  unsigned i, j, k;
-  unsigned n, step;
-  int offset, len;
-  float *buf = NULL;
-
-  float val, pre[3];
-  uint32_t *pval, *ppre;
-
-  double begin = 0.0; // for timing
-
-  pval = (uint32_t*)&val;
-  ppre = (uint32_t*)pre;
-
-  step = dims[0] * dims[1];
-  front_reset(front);
-
-  begin = now_sec();
-
-  get_sample(dims, &offset, &len);
-  buf = (float*)malloc(len*step*sizeof(float));
-  ctx->zipTime += (now_sec() - begin);
-
-  fseek(fin, offset*step*sizeof(float), SEEK_SET);
-  fread(buf, sizeof(float), len*step, fin);
-
-  begin = now_sec();
-  for(n=0, j=0; j<dims[1]; j++)
-    for(k=0; k<dims[0]; k++)
-      front_push(front, j, k, buf[n++]);
-
-  //init the steady points
-  front_switch(front);
-  for(j=0; j<dims[1]; j++)
-    for(k=0; k<dims[0]; k++)
-    {
-      val = buf[n++];
-      front_push(front, j, k, val);
-      pre[0] = front_ltime(front, j, k);
-
-      if(XOR_EQUAL(*pval, ppre[0]))
-        map->map[j][k] = STEADY;
-    }
-
-  for(i=2; i<dims[2] && i<len; i++)
-  {
-    front_switch(front);
-    for(j=0; j<dims[1]; j++)
-      for(k=0; k<dims[0]; k++)
-      {
-        val = buf[n++];
-        pre[LTIME] = front_ltime(front, j, k);
-        pre[LPOS] = front_lpos(front, j, k);
-        pre[LORENZO] = front_lorenzo(front, j, k);
-        front_push(front, j, k, val);
-
-        if(map->map[j][k] == STEADY)
-        {
-          if(!XOR_EQUAL(*pval, ppre[LTIME]))
-            map->map[j][k] = UNSTEADY;
-        }
-        else
-        {
-          map->map[j][k] = eval_pre_XOR(val, pre);
-        }
-      }
-  }
-
-  free(buf);
-  front_reset(front);
-
-  ctx->zipTime += (now_sec() - begin);
-
-  fseek(fin, 0, SEEK_SET);
-  return 0;
-}
-
-int my_compress(ctx_t *ctx, map_t *map, front_t *front,
-          unsigned dims[], FILE *fin, FILE *fout)
-{
-  char flag;
-  int type;
-
-  flag = map_decision(map);
-  type = map->type;
-
-  map_convert(map);
-  //map_print(map);
-
-  //TODO: debug only, remove it
-  //flag = 0;
-
-  printf("xxx\t%d\t%d\t%s\n", flag, type, __FILE__); 
-  switch (flag)
-  {
-    case 0:
-      //printf("no prediction, no steady\n");
-      runCompress(fin, ctx, fout, 0);
-      break;
-    case 1:
-      //printf("with prediction:%s, but no steady\n", 
-      //        names[type]);
-      compress_1(fin, ctx, front, map, fout);
-      break;
-    case 2:
-      //printf("no prediction, but with steady\n");
-      compress_2(fin, ctx, front, map, fout);
-      break;
-    case 3:
-      //printf("with prediction:%s, and with steady\n", 
-      //       names[type]);
-      compress_3(fin, ctx, front, map, fout);
-      break;
-    default:
-      printf("wrong decision\n");
-  }
-  
-  return 0;
-}
 
 int learn_compress(ctx_t *ctx,
                    const char *src, const char *dst,
@@ -190,9 +20,6 @@ int learn_compress(ctx_t *ctx,
 {
   FILE *fin, *fout;
   
-  //ctx_t mctx;
-  front_t front;
-  map_t map;
 
   fin = fopen(src, "rb");
   fout = fopen(dst, "wb");
@@ -213,24 +40,16 @@ int learn_compress(ctx_t *ctx,
     dims[1] = dims[1] * dims[2];
     dims[2] = dims[3];
   }
-  front_init(&front, dims[0], dims[1]);
-  map_init(&map, dims[0], dims[1]);
 
   ctx->fnum += 1;
   ctx->fsz += fsize_fp(fin);
-  learn(fin, ctx, &front, &map, dims);
-  my_compress(ctx, &map, &front, dims, fin, fout);
 
-  //mctx.fnum += 1;
-  //mctx.fsz += fsize_fp(fin);
-  //learn(fin, &mctx, &front, &map, dims);
-  //my_compress(&mctx, &map, &front, dims, fin, dst);
 
-  ////ctx_print(&mctx);
-  //ctx_add(ctx, &mctx);
+  runCompress(fin, ctx, fout, 0);
 
-  map_term(&map);
-  front_term(&front);
+
+
+
   fclose(fout);
   fclose(fin);
   return 0;
@@ -271,27 +90,10 @@ int nz_uncompress(ctx_t *ctx,
   //TODO: debug only, remove it
   //hd.type = 3;
 
-  switch (hd.type)
-  {
-    case 0:
-      printf("no prediction, no steady\n");
-      runDecompression(fin, ctx, &hd, fout);
-      break;
-    case 1:
-      printf("with prediction:%s, but no steady\n", 
-              names[(int)(map.type)]);
-      uncompress_1(fin, ctx, &hd, fout);
-      break;
-    case 2:
-      printf("no prediction, but with steady\n");
-      uncompress_2(fin, ctx, &hd, fout);
-      break;
-    case 3:
-      printf("with prediction:%s, and with steady\n", 
-              names[(int)(map.type)]);
-      uncompress_3(fin, ctx, &hd, fout);
-      break;
-  }
+
+  runDecompression(fin, ctx, &hd, fout);
+
+
 
   ////ctx_print(ctx);
   nz_header_term(&hd);
@@ -406,7 +208,7 @@ void fnames_print(fnames_t *fnames)
 
 }
 
-#define NAME_LEN (512)
+
 int fnames_init(fnames_t *fnames, char *fname, 
                 char *prefix, char *suffix)
 {

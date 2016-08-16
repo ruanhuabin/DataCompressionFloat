@@ -122,30 +122,10 @@ int comparator(const void *a, const void *b)
         }
     }
 
+    fprintf(stderr, "comparator should not run here, but run here, needs to check\n");
+    return 0;
+
 }
-
-int comparator2(const void *a, const void *b)
-{
-    stat_info_t *sa = (stat_info_t *)a;
-    stat_info_t *sb = (stat_info_t *)b;
-
-    float erra = sa->err;
-    float errb = sb->err;
-
-    float relativeErra = sa->relativeErr;
-    float relativeErrb = sb->relativeErr;
-
-    char strErra[64];
-    char strErrb[64];
-
-    memset(strErra, '\0', sizeof(strErra));
-    memset(strErrb, '\0', sizeof(strErrb));
-    sprintf(strErra, "%.6f", erra);
-    sprintf(strErrb, "%.6f", errb);
-
-    return strcmp(strErrb, strErra);
-}
-
 
 
 void calculateDiff(float *buffer1, float *buffer2, int n, stat_info_t *stat_points)

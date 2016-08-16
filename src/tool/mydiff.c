@@ -42,8 +42,8 @@ int main ( int argc, char *argv[] )
         {
             if(fabsf(buffer1[i] - buffer2[i]) > 10E-6)
             {
-                char *c1 = &buffer1[i];
-                char *c2 = &buffer2[i];
+                char *c1 = (char *)&buffer1[i];
+                char *c2 = (char *)&buffer2[i];
                 printf("count = 0x%08X, n1 = %f, n2 = %f\n", count, buffer1[i], buffer2[i]);
                 for(int j = 0; j < 4; j ++)
                 {

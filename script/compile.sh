@@ -30,5 +30,4 @@ then
 fi
 
 cd script/
-./run_full_test.sh 16 2>/dev/null
 

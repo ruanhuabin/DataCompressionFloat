@@ -1,9 +1,4 @@
-/***********************************************
- Author: LT songbin
- Created Time: Tue 18 Jun 2013 05:01:00 PM CST
- File Name: common.h
- Description: 
- **********************************************/
+
 #ifndef _ZIP_COMMON_H_
 #define _ZIP_COMMON_H_
 

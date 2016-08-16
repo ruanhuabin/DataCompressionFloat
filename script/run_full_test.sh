@@ -86,11 +86,7 @@ do
     
    referenceFile="maskdata-mrc-small/mask${i}bits.mrc"
 
-   if [ $i -eq 5 ]
-   then
-       referenceFile="maskdata-mrc-small/mask6bits.mrc"
-   fi
-
+   
    diff ${referenceFile} ${result}
 
    if [ $? -eq 0 ]

@@ -1,9 +1,3 @@
-/***********************************************
- Author: LT songbin
- Created Time: Wed Jul 10 22:23:41 2013
- File Name: adapt.h
- Description: 
- **********************************************/
 #ifndef _LT_ADAPT_H_
 #define _LT_ADAPT_H_
 

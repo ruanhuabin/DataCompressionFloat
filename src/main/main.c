@@ -108,60 +108,6 @@ void *worker_uncompress(void *arg)
   return 0;
 }
 
-void *dual_worker(void *arg)
-{
-  int ret, jdx;
-  uint32_t count = 0;
-  uint32_t point = 0;
-  char tmpfname[1024] = {0};
-  char header[128] = {0};
-  ctx_t ctx1, ctx2;
-
-  margs_t *args = (margs_t*)arg;
-  ctx_t *ctx = &(args->nums);
-  fnames_t *fnames = args->fnames;
-  int idx = args->idx;
-
-  ctx_init(&ctx1);
-  ctx_init(&ctx2);
-
-  sprintf(header, "thread %d", idx);
-  
-  point = fnames->size/10 + 1;
-  if(point < 10)
-    point = 10;
-
-  while(fnames_next(fnames, &jdx) > -1)
-  {
-    ctx_reset(&ctx1);
-    ctx_reset(&ctx2);
-    ret = learn_compress(&ctx1, fnames->srcs[jdx], fnames->dsts[jdx],
-                   fnames->dims[jdx]);
-
-    //uncompress it
-    if(ret != 0)
-      continue;
-
-    sprintf(tmpfname, "%s.uz", fnames->dsts[jdx]);
-    nz_uncompress(&ctx2, fnames->dsts[jdx], tmpfname);
-
-    ctx1.unzipTime = ctx2.unzipTime;
-    //print the speeds for current file
-    ctx_print(&ctx1);
-
-    ctx_add(ctx, &ctx1);
-
-    count += 1;
-
-    if(count % point == 0)
-    {
-      //print the speeds for all the files
-      ctx_print_more(ctx, header);
-    }
-  }
-
-  return 0;
-}
 
 /* -------------------------------------------- */
 int64_t handle_them(fnames_t *fnames, int num, int type)
@@ -187,10 +133,7 @@ int64_t handle_them(fnames_t *fnames, int num, int type)
       pthread_create(&(threads[i]), NULL, worker_compress, &args[i]);
     else if(type == 1)
       pthread_create(&(threads[i]), NULL, worker_uncompress, &args[i]);
-    else
-      pthread_create(&(threads[i]), NULL, dual_worker, &args[i]);
-
-  }
+    }
 
   ctx_init(&total);
   for(i=0; i<num; i++)
@@ -200,13 +143,6 @@ int64_t handle_them(fnames_t *fnames, int num, int type)
   }
 
   ctx_print_more(&total, "Overall");
-  //if(type == 2)
-  //{
-  //  total.fnum = total.fnum/2;
-  //  total.fsz = total.fsz/2;
-  //  total.zfsz = total.zfsz/2;
-  //ctx_print_more(&total, "Overall");
-  //}
 
   free(threads);
   free(args);
@@ -283,137 +219,8 @@ int64_t compress_them(fnames_t *fnames, int num)
   return total.fsz;
 }
 
-int do_compress_only(int argc, char *argv[])
-{
-  fnames_t fnames;
-  double begin, end, diff, rate, num;
-  struct timeval tim;
 
-  int threads = 1;
-  if(argc > 4)
-    threads = atoi(argv[4]);
 
-  fnames_init(&fnames, argv[2], argv[3], "nz");
-  fnames_print(&fnames);
-
-  gettimeofday(&tim, NULL);
-  begin = tim.tv_sec + (tim.tv_usec/1000000.0);
-
-  num = compress_them(&fnames, threads);
-
-  gettimeofday(&tim, NULL);
-  end = tim.tv_sec + (tim.tv_usec/1000000.0);
-
-  diff = end - begin;
-  rate = ((double)num) / (diff*1024*1024);
-
-  num = num/(1024.0*1024.0*1024);
-  printf("num:%0.4f GBytes, time:%0.2f seconds, %0.2fMB/s\n", num, diff, rate);
-
-  fnames_term(&fnames);
-  return 0;
-}
-
-int do_uncompress_only(int argc, char *argv[])
-{
-  fnames_t fnames;
-  double begin, end, diff, rate, num;
-  struct timeval tim;
-
-  int threads = 1;
-  if(argc > 4)
-    threads = atoi(argv[4]);
-
-  fnames_init(&fnames, argv[2], argv[3], "uz");
-  fnames_print(&fnames);
-
-  gettimeofday(&tim, NULL);
-  begin = tim.tv_sec + (tim.tv_usec/1000000.0);
-
-  num = handle_them(&fnames, threads, 1);
-
-  gettimeofday(&tim, NULL);
-  end = tim.tv_sec + (tim.tv_usec/1000000.0);
-
-  diff = end - begin;
-  rate = ((double)num) / (diff*1024*1024);
-
-  num = num/(1024.0*1024.0*1024);
-  printf("num:%0.4f GBytes, time:%0.2f seconds, %0.2fMB/s\n", num, diff, rate);
-
-  fnames_term(&fnames);
-  return 0;
-}
-
-/*------------------------------------------------*/
-
-int64_t compress_uncompress_them(fnames_t *fnames, int num)
-{
-  int i;
-  ctx_t total;
-  margs_t *args;
-  pthread_t *threads;
-  
-  args = malloc(sizeof(margs_t)*num);
-  memset(args, 0, sizeof(margs_t)*num);
-
-  threads = malloc(sizeof(pthread_t) * num);
-  memset(threads, 0, sizeof(pthread_t)*num);
-
-  for(i=0; i<num; i++)
-  {
-    args[i].idx = i;
-    args[i].fnames = fnames;
-    ctx_init(&(args[i].nums));
-    pthread_create(&(threads[i]), NULL, dual_worker, &args[i]);
-  }
-
-  ctx_init(&total);
-  for(i=0; i<num; i++)
-  {
-    pthread_join(threads[i], NULL);
-    ctx_add(&total, &(args[i].nums));
-  }
-
-  ctx_print_more(&total, "Overall");
-
-  free(threads);
-  free(args);
-  return total.fsz;
-}
-
-int do_compress_uncompress(int argc, char *argv[])
-{
-  fnames_t fnames;
-  double begin, end, diff, rate, num;
-  struct timeval tim;
-
-  int threads = 1;
-  if(argc > 4)
-    threads = atoi(argv[4]);
-
-  fnames_init(&fnames, argv[2], argv[3], "nz");
-  fnames_print(&fnames);
-
-  gettimeofday(&tim, NULL);
-  begin = tim.tv_sec + (tim.tv_usec/1000000.0);
-
-  num = compress_uncompress_them(&fnames, threads);
-
-  gettimeofday(&tim, NULL);
-  end = tim.tv_sec + (tim.tv_usec/1000000.0);
-
-  diff = end - begin;
-  rate = ((double)num) / (diff*1024*1024);
-
-  num = num/(1024.0*1024.0*1024);
-  printf("num:%0.4f GBytes, time:%0.2f seconds, %0.2fMB/s\n", num, diff, rate);
-
-  fnames_term(&fnames);
-  return 0;
-}
-
-/*------------------------------------------------*/
 void print_usage(const char *cmd)
 {
   printf("Usage:\n(1)compress only: \n");
@@ -456,7 +263,7 @@ int get_opt(int argc, char *argv[])
     }
     printf("[only uncompress files]\n");
     start_job(argc, argv, 1);
-    //do_uncompress_only(argc, argv);
+
   }
   else{
     if(argc < 4)
@@ -467,7 +274,7 @@ int get_opt(int argc, char *argv[])
 
     printf("[compress & decompress files]\n");
     start_job(argc, argv, 2);
-    //do_compress_uncompress(argc, argv);
+
   }
   return 0;
 }
