@@ -19,6 +19,6 @@
 
 for((i=0; i<=32; i++))
 do
-    ./erasebytes_c -i ../data/data1000x1000x32.mrc -o mask${i}bits.mrc -b $i
+    ./erasebytes_c -i ../data/stack_small.mrc -o mask${i}bits.mrc -b $i
 done
 
