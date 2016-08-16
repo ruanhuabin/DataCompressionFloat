@@ -1,18 +1,17 @@
-
 #ifndef _LT_WORKERS_H_
 #define _LT_WORKERS_H_
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 ///////////////////////////////////////////////////////////////
 
 #include "common.h" //prediction_t
 
-
 /* --- no predition, no steady points --- */
-int runCompress(FILE *fin, ctx_t *ctx, FILE *fout, const int compressPrecision);
-int runDecompression(FILE *fin, ctx_t *ctx, nz_header *hd, FILE *fout);
+int run_compress(FILE *fin, ctx_t *ctx, FILE *fout, const int compressPrecision);
+int run_decompress(FILE *fin, ctx_t *ctx, nz_header *hd, FILE *fout);
 
 /* --- with predition, no steady points --- */
 int compress_1(FILE *fin, ctx_t *ctx, front_t *front, map_t *map, FILE *fout);
@@ -23,8 +22,7 @@ int compress_2(FILE *fin, ctx_t *ctx, front_t *front, map_t *map, FILE *fout);
 int uncompress_2(FILE *fin, ctx_t *ctx, nz_header *hd, FILE *fout);
 
 /* --- with predition, with steady points --- */
-int compress_3(FILE *fin, ctx_t *ctx, front_t *front, 
-               map_t *map, FILE *fout);
+int compress_3(FILE *fin, ctx_t *ctx, front_t *front, map_t *map, FILE *fout);
 int uncompress_3(FILE *fin, ctx_t *ctx, nz_header *hd, FILE *fout);
 
 ///////////////////////////////////////////////////////////////

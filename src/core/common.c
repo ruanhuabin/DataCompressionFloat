@@ -5,9 +5,11 @@
 
 #include "common.h"
 
-char *names[] = { "ltime", "lpos", "lorenzo", "steady", "unsteady" };
+char *names[] =
+{ "ltime", "lpos", "lorenzo", "steady", "unsteady" };
 
-uint64_t fsize_fp(FILE *fp) {
+uint64_t get_file_size(FILE *fp)
+{
 	if (fp == NULL)
 		return -1;
 
@@ -22,13 +24,15 @@ uint64_t fsize_fp(FILE *fp) {
 	return sz;
 }
 
-double now_sec() {
+double now_sec()
+{
 	struct timeval tim;
 	gettimeofday(&tim, NULL);
 	return (tim.tv_sec + (tim.tv_usec / 1000000.0));
 }
 
-void ctx_init(ctx_t *ctx) {
+void init_ctx(ctx_t *ctx)
+{
 	ctx->fnum = 0;
 	ctx->fsz = 0;
 	ctx->zfsz = 0;
@@ -36,7 +40,8 @@ void ctx_init(ctx_t *ctx) {
 	ctx->unzipTime = 0.0;
 }
 
-void ctx_reset(ctx_t *ctx) {
+void ctx_reset(ctx_t *ctx)
+{
 	ctx->fnum = 0;
 	ctx->fsz = 0;
 	ctx->zfsz = 0;
@@ -44,7 +49,8 @@ void ctx_reset(ctx_t *ctx) {
 	ctx->unzipTime = 0.0;
 }
 
-void displayContext(ctx_t *ctx, const char *hintMsg) {
+void print_context_info(ctx_t *ctx, const char *hintMsg)
+{
 	const char *firstColumHeader = "[Original File Size(Bytes)]    ";
 	const char *secondColumHeader = "[Compressed File Size(Bytes)]    ";
 	const char *thirdColumHeader = "[Zip/Unzip Time(s)]    ";
@@ -78,7 +84,8 @@ void displayContext(ctx_t *ctx, const char *hintMsg) {
 			ctx->zfsz, thirdColumnLen, timeInfo, fourthColumnLen, 4, speed);
 }
 
-void ctx_print(ctx_t *ctx) {
+void print_ctx(ctx_t *ctx)
+{
 	double m = 1024 * 1024.0;
 
 	printf("%lu\t%lu\t%.4f", ctx->fsz, ctx->zfsz,
@@ -97,13 +104,15 @@ void ctx_print(ctx_t *ctx) {
 	printf(" MB/s\n");
 }
 
-void ctx_print_more(ctx_t *ctx, const char *key) {
+void ctx_print_more(ctx_t *ctx, const char *key)
+{
 	printf("-------------------------\n");
 	printf("[%s]:", key);
-	ctx_print(ctx);
+	print_ctx(ctx);
 }
 
-void ctx_add(ctx_t *dst, ctx_t *src) {
+void update_context(ctx_t *dst, ctx_t *src)
+{
 	dst->fnum += src->fnum;
 	dst->fsz += src->fsz;
 	dst->zfsz += src->zfsz;
@@ -111,43 +120,50 @@ void ctx_add(ctx_t *dst, ctx_t *src) {
 	dst->unzipTime += src->unzipTime;
 }
 
-void nz_header_init(nz_header *hd, char type) {
+void init_mrczip_header(nz_header *hd, char type)
+{
 	hd->type = type;
 	hd->fsz = 0;
 	hd->chk = 0;
-	hd->map = NULL;
 	memset(hd->ztypes, 0, 5);
 }
 
-void nz_header_term(nz_header *hd) {
+void nz_header_term(nz_header *hd)
+{
 }
 
-void displayHeader(nz_header *hd, const char *hintMsg) {
+void print_mrczip_header(nz_header *hd, const char *hintMsg)
+{
 
 	printf(
 			"[%s]: Original file size = %ld, chunk size = %d, compresstion type = %d\n",
 			hintMsg, hd->fsz, hd->chk, hd->type);
 }
 
-int readHeader(FILE *fin, nz_header *hd) {
+int read_mrczip_header(FILE *fin, nz_header *hd)
+{
 	int i;
-	if (fread(&(hd->fsz), sizeof(uint64_t), 1, fin) < 1) {
+	if (fread(&(hd->fsz), sizeof(uint64_t), 1, fin) < 1)
+	{
 		fprintf(stderr, "[ERROR]:Failed to read file\n");
 		return -1;
 	}
 	fread(&(hd->chk), sizeof(uint32_t), 1, fin);
 	fread(&(hd->type), sizeof(char), 1, fin);
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < 5; i++)
+	{
 		fread(&(hd->ztypes[i]), sizeof(char), 1, fin);
 	}
 
 	return 0;
 }
 
-int nz_header_read(FILE *fin, nz_header *hd) {
+int nz_header_read(FILE *fin, nz_header *hd)
+{
 	int i;
 
-	if (fread(&(hd->fsz), sizeof(uint64_t), 1, fin) < 1) {
+	if (fread(&(hd->fsz), sizeof(uint64_t), 1, fin) < 1)
+	{
 		TAG
 		;
 		fprintf(stderr, "[ERROR]:Failed to read file\n");
@@ -155,19 +171,22 @@ int nz_header_read(FILE *fin, nz_header *hd) {
 	}
 	fread(&(hd->chk), sizeof(uint32_t), 1, fin);
 	fread(&(hd->type), sizeof(char), 1, fin);
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < 5; i++)
+	{
 		fread(&(hd->ztypes[i]), sizeof(char), 1, fin);
 	}
 
 	return 0;
 }
 
-int nz_header_write(FILE *fout, nz_header *hd) {
+int nz_header_write(FILE *fout, nz_header *hd)
+{
 	int i;
 	fwrite(&(hd->fsz), sizeof(uint64_t), 1, fout);
 	fwrite(&(hd->chk), sizeof(uint32_t), 1, fout);
 	fwrite(&(hd->type), sizeof(char), 1, fout);
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < 5; i++)
+	{
 		fwrite(&(hd->ztypes[i]), sizeof(char), 1, fout);
 	}
 

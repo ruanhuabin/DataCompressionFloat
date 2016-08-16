@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#define size_t unsigned int
 int main ( int argc, char *argv[] )
 { 
     FILE *file1 = fopen(argv[1], "rb");

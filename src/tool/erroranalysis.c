@@ -122,7 +122,8 @@ int comparator(const void *a, const void *b)
         }
     }
 
-    fprintf(stderr, "comparator should not run here, but run here, needs to check\n");
+    fprintf(stderr,
+			"comparator should not run here, but run here, needs to check\n");
     return 0;
 
 }
