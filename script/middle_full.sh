@@ -17,7 +17,7 @@
 #      REVISION:  ---
 #===============================================================================
 projectRoot=/root/datacompression/DataCompressionFloat
-app=$projectRoot/script/simple_compress_c
+app=$projectRoot/script/marc_tar_c
 timestamp=`date +%Y-%m-%d:%H:%M:%S`
 bitsToMask=0
 if [ "$#" -eq 1 ]

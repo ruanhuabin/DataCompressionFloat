@@ -25,8 +25,10 @@ typedef struct _file_container_t
 int init_file_container(file_container_t *file_container, char *file_list_descriptor, char *prefix, char *suffix);
 void free_file_container(file_container_t *file_container);
 void print_file_container_info(file_container_t *fnames);
-int get_next_file_idx(file_container_t *fnames, int *idx);
+int get_next_file(file_container_t *fnames, int *idx);
 
+
+int init_file_container_ex(file_container_t *fnames, const char *ifcFile, const char *outputDir, char *opType);
 ///////////////////////////////////////////////////////////////
 #ifdef __cplusplus
 }

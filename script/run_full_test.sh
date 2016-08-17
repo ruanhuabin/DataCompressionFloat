@@ -19,7 +19,7 @@
 
 set -o nounset                              # Treat unset variables as an error
 projectRoot=/root/datacompression/DataCompressionFloat/
-appName=${projectRoot}/script/simple_compress_c
+appName=${projectRoot}/script/mrc_tar_c
 timestamp=`date +%Y-%m-%d:%H:%M:%S`
 bitsToMask=0
 if [ "$#" -eq 1 ]

@@ -8,7 +8,7 @@ extern "C"
 ///////////////////////////////////////////////////////////////
 #include <stdio.h>
 #include <stdint.h>
-#include <nzips.h>
+#include "mrczip.h"
 
 
 typedef struct _context_t

@@ -5,6 +5,7 @@
 *.swo
 *.mrc
 *.nz
+*.uz
 cscope*
 bin/
 data/

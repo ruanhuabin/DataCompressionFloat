@@ -39,7 +39,7 @@ void *worker_compress(void *arg)
 	if (point < 10)
 		point = 10;
 
-	while (get_next_file_idx(fnames, &jdx) > -1)
+	while (get_next_file(fnames, &jdx) > -1)
 	{
 		reset_context(&ctx1);
 
@@ -87,7 +87,7 @@ void *worker_uncompress(void *arg)
 	if (point < 10)
 		point = 10;
 
-	while (get_next_file_idx(fnames, &file_idx) > -1)
+	while (get_next_file(fnames, &file_idx) > -1)
 	{
 		reset_context(&ctx2);
 		ret = zip_uncompress(&ctx2, fnames->srcs[file_idx], fnames->dsts[file_idx]);
@@ -189,6 +189,75 @@ int start_job(int argc, char *argv[], int jtype)
 }
 
 
+int start_mt_compress(const char *ifcFile,  const char *outputDir, int threadNum)
+{
+	file_container_t fnames;
+	double start, end, diff, rate, num;
+	struct timeval tm;
+
+
+	init_file_container_ex(&fnames, ifcFile, outputDir, "zip");
+
+
+	print_file_container_info(&fnames);
+
+	//return 0;
+
+	gettimeofday(&tm, NULL);
+	start = tm.tv_sec + (tm.tv_usec / 1000000.0);
+
+	num = handle_them(&fnames, threadNum, 0);
+
+	gettimeofday(&tm, NULL);
+	end = tm.tv_sec + (tm.tv_usec / 1000000.0);
+
+	diff = end - start;
+	rate = ((double) num) / (diff * 1024 * 1024);
+
+	num = num / (1024.0 * 1024.0 * 1024);
+	printf("num:%0.4f GBytes, time:%0.2f seconds, %0.2fMB/s\n", num, diff,
+			rate);
+
+	free_file_container(&fnames);
+	return 0;
+}
+
+
+int start_mt_uncompress(const char *ifcFile,  const char *outputDir, int threadNum)
+{
+	file_container_t fnames;
+	double start, end, diff, rate, num;
+	struct timeval tm;
+
+
+	init_file_container_ex(&fnames, ifcFile, outputDir, "unzip");
+
+
+	print_file_container_info(&fnames);
+
+
+	gettimeofday(&tm, NULL);
+	start = tm.tv_sec + (tm.tv_usec / 1000000.0);
+
+	num = handle_them(&fnames, threadNum, 1);
+
+	gettimeofday(&tm, NULL);
+	end = tm.tv_sec + (tm.tv_usec / 1000000.0);
+
+	diff = end - start;
+	rate = ((double) num) / (diff * 1024 * 1024);
+
+	num = num / (1024.0 * 1024.0 * 1024);
+	printf("num:%0.4f GBytes, time:%0.2f seconds, %0.2fMB/s\n", num, diff,
+			rate);
+
+	free_file_container(&fnames);
+	return 0;
+}
+
+
+
+
 void print_usage(const char *cmd)
 {
 	printf("Usage:\n(1)compress only: \n");
@@ -248,9 +317,84 @@ int get_opt(int argc, char *argv[])
 	return 0;
 }
 
+
+void usage(char **argv)
+{
+	printf("\nUsage:\n\n");
+	printf(
+			"\t%s -i <file list descriptor>  -t <zip | unzip> [-o <root dir of output file> -b <bits to erase> -n <thread numbers>]",
+			argv[0]);
+	printf("\nwhere:\n");
+	printf("\t");
+	printf("-i\t a text file that contains the path of files that need to becompressed or decompressed\n\n");
+	printf("\t");
+	printf("-o\t a directory that used the output the compressed/uncompressed file, default is /tmp/ \n\n");
+	printf("\t");
+	printf("-b\t bits to be erased, range[0..32], default is 0\n\n");
+	printf("\t");
+	printf(
+			"-t\t operation type, e.g compress or decompressed file, value should be [zip | unzip]\n\n");
+	printf("\t");
+	printf(
+				"-n\t thread number to be invoked, default is 2\n\n");
+}
+
 int main(int argc, char *argv[])
 {
 	printf("[Compress data with hpos]\n");
-	get_opt(argc, argv);
+	//get_opt(argc, argv);
+	char *opt_str = "hi:o:b:t:n:";
+	int opt = 0;
+	const char *ifcFile = NULL;
+	const char *outputDir = "/tmp/";
+	int bitsToErase = 0;
+	int threadNum = 2;
+
+	const char *operType = "zip";
+
+	if (argc < 2)
+	{
+		usage(argv);
+		exit(-1);
+	}
+
+	while ((opt = getopt(argc, argv, opt_str)) != -1)
+	{
+		switch (opt)
+		{
+		case 'i':
+			ifcFile = optarg;
+			break;
+		case 'o':
+			outputDir = optarg;
+			break;
+		case 'b':
+			bitsToErase = atoi(optarg);
+			break;
+		case 'n':
+			threadNum = atoi(optarg);
+			break;
+		case 't':
+			operType = optarg;
+			break;
+		case 'h':
+			usage(argv);
+			return 0;
+		default:
+			printf("Invalid command line parameters: %s!\n", optarg);
+			usage(argv);
+			return -1;
+		}
+	}
+
+	printf("ZLIB:%s\n", zlib_version);
+	if (strcmp(operType, "zip") == 0)
+	{
+		start_mt_compress(ifcFile, outputDir, threadNum);
+	}
+	else if (strcmp(operType, "unzip") == 0)
+	{
+		start_mt_uncompress(ifcFile, outputDir, threadNum);
+	}
 	return 0;
 }

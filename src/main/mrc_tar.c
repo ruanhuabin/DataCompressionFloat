@@ -13,6 +13,7 @@
  *        Company:  HPC tsinghua                                      
  *                                                                 
  *******************************************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -107,7 +108,7 @@ int main(int argc, char *argv[])
 	int opt = 0;
 	const char *inputFileName = NULL;
 	const char *outputFileName = NULL;
-	int bitsToErase = 8;
+	int bitsToErase = 0;
 
 	const char *operType = "zip";
 

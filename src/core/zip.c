@@ -3,10 +3,10 @@
 #include <string.h>
 #include <sys/time.h>
 #include <assert.h>
+#include "mrczip.h"
 #include "zlib.h"
 #include "lz4.h"
 #include "lz4hc.h"
-#include "nzips.h"
 #include "common.h"
 #include "constant.h"
 
@@ -26,7 +26,7 @@ void _lz4_def(mzip_t *zip, char **p, int *len)
 		*len = zip->inlen + HDR_SIZE;
 	}
 
-	//TIP:for accounting
+
 	zip->fsz += zip->inlen;
 	zip->zfsz += *len;
 }

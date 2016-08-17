@@ -178,6 +178,156 @@ int init_file_container(file_container_t *fnames, char *file_list_descriptor, ch
 	return 0;
 }
 
+
+void reverse(char *str)
+{
+    int i = 0;
+    int j = strlen(str) - 1;
+
+    char temp;
+    while (i < j)
+    {
+      temp = str[i];
+      str[i] = str[j];
+      str[j] = temp;
+      i++;
+      j--;
+    }
+}
+void extract_suffix(const char *input, char *suffix)
+{
+    int idx = 0;
+    int len = strlen(input);
+    for(int i = len - 1; i >= 0; i --)
+    {
+        if(input[i] != '.')
+        {
+            suffix[idx] = input[i];
+            idx ++;
+
+        }
+        else
+        {
+            break;
+        }
+
+    }
+
+    suffix[idx] = '\0';
+    reverse(suffix);
+
+}
+
+void extract_pure_file_name(const char *input, char *pureFileName)
+{
+    int len = strlen(input);
+    int index = 0;
+    for(int i = len - 1; i >= 0; i --)
+    {
+        if(input[i] != '/')
+        {
+            pureFileName[index] = input[i];
+            index ++;
+        }
+        else
+        {
+            break;
+        }
+
+    }
+
+    pureFileName[index] = '\0';
+
+    reverse(pureFileName);
+
+    printf("pureFileName = %s\n", pureFileName);
+}
+
+
+void extract_prefix_suffix(const char *input, char *prefix, char *suffix)
+{
+    char pureFileName[128];
+    memset(pureFileName, '\0', sizeof(pureFileName));
+
+    extract_pure_file_name(input, pureFileName);
+    extract_suffix(pureFileName, suffix);
+
+    int plen = strlen(pureFileName);
+    int slen = strlen(suffix);
+    int i = 0;
+    for(i = 0; i < plen - slen - 1; i ++)
+    {
+        prefix[i] = pureFileName[i];
+    }
+    prefix[i] = '\0';
+}
+
+
+
+int init_file_container_ex(file_container_t *fnames, const char *ifcFile, const char *outputDir, char *opType)
+{
+	int i, j, lines;
+	char buf[1024];
+
+	FILE *fp;
+	int len;
+	char *pname;
+
+	memset(buf, '\0', sizeof(buf));
+	lines = count_file_num(ifcFile);
+
+	fnames->idx = 0;
+	fnames->size = 0;
+	fnames->fileNum = lines;
+
+	fnames->srcs = (char**) malloc(lines * sizeof(char*));
+	fnames->dsts = (char**) malloc(lines * sizeof(char*));
+
+	char prefix[128];
+	char suffix[128];
+	memset(prefix, '\0', sizeof(prefix));
+	memset(suffix, '\0', sizeof(suffix));
+
+	fp = fopen(ifcFile, "r");
+	for (i = 0, j = 0; i < lines; i++)
+	{
+		fgets(buf, 1024, fp);
+		erase_space(buf);
+		pname = buf;
+		len = strlen(buf);
+
+		fnames->srcs[j] = (char*) malloc(len + 1);
+		fnames->dsts[j] = (char*) malloc(512);
+
+
+		memcpy(fnames->srcs[j], pname, len);
+
+		extract_prefix_suffix(pname, prefix, suffix);
+
+		if(strcmp(suffix, "mrc") == 0)
+		{
+			sprintf(fnames->dsts[j], "%s/%s.%s.%s", outputDir, prefix, suffix, "zip");
+		}
+		else if(strcmp(suffix, "zip") == 0)
+		{
+			sprintf(fnames->dsts[j], "%s/%s", outputDir, prefix);
+		}
+		else
+		{
+			fprintf(stderr, "[%s:%d] Error: Only file with suffix [mrc | zip] can be processed\n", __FILE__, __LINE__);
+			exit(-1);
+		}
+
+		j++;
+	}
+
+	fnames->size = j;
+	fclose(fp);
+
+	pthread_mutex_init(&fnames->lock, NULL);
+	return 0;
+}
+
 void free_file_container(file_container_t *fnames)
 {
 	int i;
@@ -195,7 +345,7 @@ void free_file_container(file_container_t *fnames)
 	pthread_mutex_destroy(&fnames->lock);
 }
 
-int get_next_file_idx(file_container_t *fnames, int *idx)
+int get_next_file(file_container_t *fnames, int *idx)
 {
 	pthread_mutex_lock(&fnames->lock);
 	if (fnames->idx < fnames->size)

@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "common.h"
 #include "workers.h"
-#include "nzips.h"
 #include "constant.h"
-
+#include "mrczip.h"
+/*
+ *a = b;
+ */
 static int bitsMaskTable[] =
 {     0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFFFC, 0xFFFFFFF8, 0xFFFFFFF0, 0xFFFFFFE0,
 		0xFFFFFFC0, 0xFFFFFF80, 0xFFFFFF00, 0xFFFFFE00, 0xFFFFFC00, 0xFFFFF800,

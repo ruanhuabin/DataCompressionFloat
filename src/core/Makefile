@@ -33,6 +33,7 @@ all:$(CORE_MODULE) $(STATIC_LIB_NAME)
 %_cxx.o:%.cxx
 	$(compile-cmd)
 $(STATIC_LIB_NAME):$(CORE_MODULE)
+	rm -rf ../../bin/*
 	$(archive-cmd)
 .phony:clean
 clean:

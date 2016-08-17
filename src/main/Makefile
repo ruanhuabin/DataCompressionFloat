@@ -5,6 +5,7 @@ BIN_MODULE += $(patsubst %.cpp, %_cpp, $(wildcard *.cpp))
 BIN_MODULE += $(patsubst %.cxx, %_cxx, $(wildcard *.cxx))
 
 define link-cmd
+	@rm -rf $(BIN_MODULE)
 	$(CC) $(CFLAGS) -I$(INC_PATH) -L$(LIB_PATH) -o $(addprefix ../../bin/, $@) $< $(LIBS)
 endef
 VPATH = ../../bin
