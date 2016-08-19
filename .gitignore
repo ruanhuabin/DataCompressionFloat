@@ -6,6 +6,8 @@
 *.mrc
 *.nz
 *.uz
+tmp
+.settings
 cscope*
 bin/
 data/

@@ -18,6 +18,7 @@
 #===============================================================================
 
 set -o nounset                              # Treat unset variables as an error
+origStackFile=/root/datacompression/data/stack.mrc
 projectRoot=/root/datacompression/DataCompressionFloat/
 appName=${projectRoot}/script/mrc_tar_c
 timestamp=`date +%Y-%m-%d:%H:%M:%S`
@@ -72,15 +73,21 @@ function compress_and_uncompress()
     echo "$jyOutputFilePath"
 }
 
-count=0
+M=0
 N=4
 if [ "$#" -eq 1 ]
 then
     N=$1
 fi
+if [ "$#" -eq 2 ]
+then
+    M=$1
+    N=$2
+fi
 
+count=$M
 N=$[N+1]
-for((i=0; i<${N}; i++))
+for((i=M; i<${N}; i++))
 do
     result=$(compress_and_uncompress $i)
     
@@ -99,6 +106,11 @@ do
        echo "Current bits to mask: $count"
        break 
    fi
+    #start to check the error precision
+    echo "--------------------------------------------------------------"
+    echo "---------------Max Error Precision Info----------------------"
+   ./erroranalysis_c -a ${origStackFile} -b ${result} -k 2 
+    echo "--------------------------------------------------------------"
 done
 
 

@@ -30,5 +30,14 @@ then
 fi
 
 cd script/
-./run_large_full_test.sh 16 2>/dev/null
+
+N=8
+
+if [ $# -eq 2 ]
+then
+    N=$1
+fi
+
+./run_large_full_test.sh $N 2>/dev/null
+
 

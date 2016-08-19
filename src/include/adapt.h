@@ -9,7 +9,7 @@ extern "C"
 #include <pthread.h>
 #include "common.h"
 
-int zip_compress(ctx_t *ctx, const char *src, const char *dst);
+int zip_compress(ctx_t *ctx, const char *src, const char *dst, int bitsToLoss);
 int zip_uncompress(ctx_t *ctx, const char *src, const char *dst);
 
 typedef struct _file_container_t

@@ -13,7 +13,7 @@
 #include "workers.h"
 #include "adapt.h"
 
-int zip_compress(ctx_t *ctx, const char *src, const char *dst)
+int zip_compress(ctx_t *ctx, const char *src, const char *dst, int bitsToLoss)
 {
 	FILE *fin, *fout;
 
@@ -31,10 +31,11 @@ int zip_compress(ctx_t *ctx, const char *src, const char *dst)
 		exit(-1);
 	}
 
+	fprintf(stderr, "Thread %lu is starting to compress file [%s]\n", pthread_self(), src);
 	ctx->fileCount += 1;
 	ctx->allFileSize += get_file_size(fin);
 
-	run_compress(fin, ctx, fout, 0);
+	run_compress(fin, ctx, fout, bitsToLoss);
 
 	fclose(fout);
 	fclose(fin);
@@ -90,8 +91,9 @@ int count_file_num(const char *fname)
 	fp = fopen(fname, "r");
 	if (fp == NULL)
 	{
-		fprintf(stderr, "fail open %s read\n", fname);
-		return -1;
+		fprintf(stderr, "[%s:%d] Error: Open File Failed: [ %s ]\n", __FILE__, __LINE__, fname);
+		//return -1;
+		exit(-1);
 	}
 
 	lines = 0;

@@ -14,8 +14,8 @@
 #define ZIP_FAST Z_RLE
 #define CHUNK_SIZE (6*1048576)
 
-#define _OUTPUT_ZIP_ (1)
-#define _OUTPUT_UNZIP_ (1)
+#define _OUTPUT_ZIP_ (1) //for testing throughput
+#define _OUTPUT_UNZIP_ (1)  //for testing throughput
 #define _PRINT_ZIPS_ (1)
 #define _PRINT_DECISION_ (1)
 

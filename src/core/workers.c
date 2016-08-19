@@ -5,9 +5,7 @@
 #include "workers.h"
 #include "constant.h"
 #include "mrczip.h"
-/*
- *a = b;
- */
+
 static int bitsMaskTable[] =
 {     0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFFFC, 0xFFFFFFF8, 0xFFFFFFF0, 0xFFFFFFE0,
 		0xFFFFFFC0, 0xFFFFFF80, 0xFFFFFF00, 0xFFFFFE00, 0xFFFFFC00, 0xFFFFF800,
@@ -17,6 +15,7 @@ static int bitsMaskTable[] =
 		0xC0000000, 0x80000000, 0x00000000
 };
 
+ int isTestThroughput = 0;
 
 
 void term_zips(mzip_t zips[])
@@ -61,6 +60,29 @@ void apply_mask(float *buffer, int startIndex, int num, const int bitsToErase,
 {
 
 	int *p = (int *) buffer;
+
+	/**
+	 *  We should ignore first 1024 bytes in first chunk since it is the header info
+	 */
+	if (isFirstChk)
+	{
+		startIndex = startIndex + 256;
+		p = p + 256;
+	}
+
+	for (int i = startIndex; i < num; i++)
+	{
+
+		*p = (*p) & bitsMaskTable[bitsToErase];
+		p = p + 1;
+	}
+}
+
+void apply_mask_to_int(int *buffer, int startIndex, int num, const int bitsToErase,
+		int isFirstChk)
+{
+
+	int *p = buffer;
 
 	/**
 	 *  We should ignore first 1024 bytes in first chunk since it is the header info
@@ -125,6 +147,65 @@ void merge_byte_to_float_stream(float *buf, int num, char *zouts[])
 	return;
 }
 
+void split_int_to_byte_stream(float *buf, int num, char *zins[], int bitsToMask,	int isFirstChk)
+{
+
+	fprintf(stderr, "Start to covert float stream to int stream\n");
+
+	int *intBuffer = (int *)malloc(num * sizeof(int));
+	for(int i = 0; i < num; i ++)
+	{
+		intBuffer[i] = (int)(buf[i] * 100.0);
+	}
+
+	char *p0, *p1, *p2, *p3;
+	char *p = (char*) intBuffer;
+
+	p0 = zins[0];
+	p1 = zins[1];
+	p2 = zins[2];
+	p3 = zins[3];
+
+	/**
+	 *  1024 Bytes in the first chunk is the header info in MRC file, we should not apply lossy compression to it
+	 */
+	apply_mask_to_int(intBuffer, 0, num, bitsToMask, isFirstChk);
+	/**
+	 * Make zips[i] to corresponding byte stream
+	 */
+	for (int i = 0; i < num; i++)
+	{
+		*p0++ = *p++;
+		*p1++ = *p++;
+		*p2++ = *p++;
+		*p3++ = *p++;
+	}
+}
+
+void merge_byte_to_int_stream(float *buf, int num, char *zouts[])
+{
+	int i;
+	char *p0, *p1, *p2, *p3;
+	char *p = (char*) buf;
+
+	p0 = zouts[0];
+	p1 = zouts[1];
+	p2 = zouts[2];
+	p3 = zouts[3];
+	for (i = 0; i < num; i++)
+	{
+		*p++ = *p0++;
+		*p++ = *p1++;
+		*p++ = *p2++;
+		*p++ = *p3++;
+
+
+	}
+	return;
+}
+
+
+
 int run_uncompress(FILE *fin, ctx_t *ctx, mrczip_header_t *hd, FILE *fout)
 {
 	uint32_t i, j, num;
@@ -152,9 +233,21 @@ int run_uncompress(FILE *fin, ctx_t *ctx, mrczip_header_t *hd, FILE *fout)
 		uncompress_byte_stream(fin, zips, outs, chk_size);
 		merge_byte_to_float_stream(buf, chk_size, outs);
 
-#ifdef _OUTPUT_UNZIP_
-		fwrite(buf, sizeof(float), chk_size, fout);
-#endif
+//		for(int i = 0; i < chk_size; i ++ )
+//		{
+//			buf[i] = buf[i] / 100.0f;
+//		}
+
+//#ifdef _OUTPUT_UNZIP_
+
+		//if(_OUTPUT_UNZIP_ == 1)
+		if(isTestThroughput  != 1)
+		{
+			//printf("======> start to write file1\n");
+			fwrite(buf, sizeof(float), chk_size, fout);
+		}
+
+//#endif
 	}
 
 	chk_size = fsz % chk_size;
@@ -166,9 +259,14 @@ int run_uncompress(FILE *fin, ctx_t *ctx, mrczip_header_t *hd, FILE *fout)
 		merge_byte_to_float_stream(buf, chk_size, outs);
 		ctx->unzipTime += (now_sec() - start);
 
-#ifdef _OUTPUT_UNZIP_
+//#ifdef _OUTPUT_UNZIP_
+	//if(_OUTPUT_UNZIP_ == 1)
+	if(isTestThroughput != 1)
+	{
+		//printf("======> start to write file1\n");
 		fwrite(buf, sizeof(float), chk_size, fout);
-#endif
+	}
+//#endif
 	}
 
 	free(buf);
@@ -256,9 +354,13 @@ int run_compress(FILE *fin, ctx_t *ctx, FILE *fout, const int bitsToMask)
 	 */
 	if (num > 0)
 	{
-#ifdef _OUTPUT_ZIP_ 
-		write_mrczip_header(fout, &hd);
-#endif
+//#ifdef _OUTPUT_ZIP_
+		//if(_OUTPUT_ZIP_ == 1)
+		if(isTestThroughput != 1) // we will ot write file if we want to test throughput, 1 means we are going to test throughput
+		{
+			write_mrczip_header(fout, &hd);
+		}
+//#endif
 	}
 
 	int isFirstChk = 1;
@@ -266,6 +368,7 @@ int run_compress(FILE *fin, ctx_t *ctx, FILE *fout, const int bitsToMask)
 	{
 		begin = now_sec();
 		split_float_to_byte_stream(buf, num, zins, bitsToMask, isFirstChk);
+		//split_int_to_byte_stream(buf, num, zins, bitsToMask, isFirstChk);
 		/**
 		 *  We have processed the first chunk, so from next loop, this flag should be false
 		 */
@@ -295,21 +398,25 @@ int run_compress(FILE *fin, ctx_t *ctx, FILE *fout, const int bitsToMask)
 		}
 		ctx->zipTime += (now_sec() - begin);
 
-#ifdef _OUTPUT_ZIP_
-		/**
-		 * The first 4 bytes data in zouts[j][0..3] is the length of each compressed byte stream, we extracted from zouts[0..3] respectly, and write the the header of each compress blocked
-		 */
-		for (j = 0; j < 4; j++)
-			memcpy(bhd + j * HDR_SIZE, zouts[j], HDR_SIZE);
+//#ifdef _OUTPUT_ZIP_
+		//if(_OUTPUT_ZIP_ == 1)
+		if(isTestThroughput != 1)
+		{
+			/**
+			 * The first 4 bytes data in zouts[j][0..3] is the length of each compressed byte stream, we extracted from zouts[0..3] respectly, and write the the header of each compress blocked
+			 */
+			for (j = 0; j < 4; j++)
+				memcpy(bhd + j * HDR_SIZE, zouts[j], HDR_SIZE);
 
-		fwrite(bhd, 1, 4 * HDR_SIZE, fout);
+			fwrite(bhd, 1, 4 * HDR_SIZE, fout);
 
-		/**
-		 *  Write the compressed data of each chunk to the zip file, the start position of each compressed byte stream is from zouts[j] + HDR_SIZE, where HDR_SIZe = 4
-		 */
-		for (j = 0; j < 4; j++)
-			fwrite(zouts[j] + HDR_SIZE, 1, zlens[j] - HDR_SIZE, fout);
-#endif
+			/**
+			 *  Write the compressed data of each chunk to the zip file, the start position of each compressed byte stream is from zouts[j] + HDR_SIZE, where HDR_SIZe = 4
+			 */
+			for (j = 0; j < 4; j++)
+				fwrite(zouts[j] + HDR_SIZE, 1, zlens[j] - HDR_SIZE, fout);
+	}
+//#endif
 
 		num = fread(buf, sizeof(float), CHUNK_SIZE, fin);
 	}

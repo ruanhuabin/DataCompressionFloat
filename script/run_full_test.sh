@@ -18,6 +18,7 @@
 #===============================================================================
 
 set -o nounset                              # Treat unset variables as an error
+origStackFile=/root/datacompression/data/stack_small.mrc
 projectRoot=/root/datacompression/DataCompressionFloat/
 appName=${projectRoot}/script/mrc_tar_c
 timestamp=`date +%Y-%m-%d:%H:%M:%S`
@@ -99,6 +100,11 @@ do
        echo "Current bits to mask: $count"
        break 
    fi
+    #start to check the error precision
+    echo "--------------------------------------------------------------"
+    echo "---------------Max Error Precision Info----------------------"
+   ./erroranalysis_c -a ${origStackFile} -b ${result} -k 2 
+    echo "--------------------------------------------------------------"
 done
 
 
