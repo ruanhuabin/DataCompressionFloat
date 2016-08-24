@@ -291,13 +291,13 @@ int run_compress(FILE *fin, ctx_t *ctx, FILE *fout, const int bitsToMask)
 	int num;
 	mrczip_header_t hd;
 #ifdef _OUTPUT_ZIP_
-	char bhd[4 * HDR_SIZE] = 	{ 0 };
+	char bhd[COMPRESSION_PATH_NUM * HDR_SIZE] = 	{ 0 };
 #endif
 	float *buf;
 
-	mzip_t zips[4];
-	char *zins[4], *zouts[4];
-	int32_t zlens[4];
+	mzip_t zips[COMPRESSION_PATH_NUM];
+	char *zins[COMPRESSION_PATH_NUM], *zouts[COMPRESSION_PATH_NUM];
+	int32_t zlens[COMPRESSION_PATH_NUM];
 
 	double begin, zbegin; //for timing
 
@@ -311,12 +311,12 @@ int run_compress(FILE *fin, ctx_t *ctx, FILE *fout, const int bitsToMask)
 	/*
 	 * Firstly, we init 4 compressor for each byte of mrc float stream
 	 * */
-	for(int i = 0; i < 4; i ++)
+	for(int i = 0; i < COMPRESSION_PATH_NUM; i ++)
 	{
-		init_mrc_zip_stream(&zips[0], CHUNK_SIZE, ZLIB_DEF, ZIP_FAST);
-		init_mrc_zip_stream(&zips[1], CHUNK_SIZE, ZLIB_DEF, ZIP_FAST);
-		init_mrc_zip_stream(&zips[2], CHUNK_SIZE, ZLIB_DEF, ZIP_FAST);
-		init_mrc_zip_stream(&zips[3], CHUNK_SIZE, ZLIB_DEF, ZIP_FAST);
+		init_mrc_zip_stream(&zips[i], CHUNK_SIZE, ZLIB_DEF, ZIP_FAST);
+//		init_mrc_zip_stream(&zips[1], CHUNK_SIZE, ZLIB_DEF, ZIP_FAST);
+//		init_mrc_zip_stream(&zips[2], CHUNK_SIZE, ZLIB_DEF, ZIP_FAST);
+//		init_mrc_zip_stream(&zips[3], CHUNK_SIZE, ZLIB_DEF, ZIP_FAST);
 	}
 
 	/*
