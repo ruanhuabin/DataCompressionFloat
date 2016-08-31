@@ -1,3 +1,20 @@
+/*******************************************************************
+ *       Filename:  mrczip.h                                     
+ *                                                                 
+ *    Description:                                         
+ *                                                                 
+ *        Version:  1.0                                            
+ *        Created:  2016年08月08日 11时50分20秒                                 
+ *       Revision:  none                                           
+ *       Compiler:  gcc                                           
+ *                                                                 
+ *         Author:  Ruan Huabin                                      
+ *          Email:  ruanhuabin@tsinghua.edu.cn                                        
+ *        Company:  Dep. of CS, Tsinghua Unversity                                      
+ *                                                                 
+ *******************************************************************/
+
+
 #ifndef _NZIPS_H_
 #define _NZIPS_H_
 

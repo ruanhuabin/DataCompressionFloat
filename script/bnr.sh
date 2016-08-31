@@ -29,6 +29,14 @@ then
     exit
 fi
 
+N=8
+
+if [ $# -eq 1 ]
+then
+    N=$1
+fi
+
 cd script/
-./run_full_test.sh 16 2>/dev/null
+echo "Bits to Mask: $N"
+./run_full_test.sh $N 2>/dev/null
 

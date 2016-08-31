@@ -1,3 +1,21 @@
+/*******************************************************************
+ *       Filename:  adapt.h                                     
+ *                                                                 
+ *    Description:                                         
+ *                                                                 
+ *        Version:  1.0                                            
+ *        Created:  2016年08月07日 11时49分13秒                                 
+ *       Revision:  none                                           
+ *       Compiler:  gcc                                           
+ *                                                                 
+ *         Author:  Ruan Huabin                                      
+ *          Email:  ruanhuabin@tsinghua.edu.cn                                        
+ *        Company:  Dep. of CS, Tsinghua Unversity                                      
+ *                                                                 
+ *******************************************************************/
+
+
+
 #ifndef _LT_ADAPT_H_
 #define _LT_ADAPT_H_
 

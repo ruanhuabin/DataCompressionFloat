@@ -1,9 +1,21 @@
-/***********************************************
- Author: LT songbin
- Created Time: Wed Jul 10 22:17:15 2013
- File Name: adapt.c
- Description: 
- **********************************************/
+/*******************************************************************
+ *       Filename:  adapt.c                                     
+ *                                                                 
+ *    Description:                                        
+ *                                                                 
+ *        Version:  1.0                                            
+ *        Created:  2016年08月05日 11时46分31秒                                 
+ *       Revision:  none                                           
+ *       Compiler:  gcc                                           
+ *                                                                 
+ *         Author:  Ruan Huabin                                      
+ *          Email:  ruanhuabin@tsinghua.edu.cn                                        
+ *        Company:  Dep. of CS, Tsinghua Unversity                                      
+ *                                                                 
+ *******************************************************************/
+
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -1,9 +1,19 @@
-/*
- * constant.h
- *
- *  Created on: 2016年8月16日
- *      Author: root
- */
+/*******************************************************************
+ *       Filename:  constant.h                                     
+ *                                                                 
+ *    Description:                                         
+ *                                                                 
+ *        Version:  1.0                                            
+ *        Created:  2016年08月14日 11时49分56秒                                 
+ *       Revision:  none                                           
+ *       Compiler:  gcc                                           
+ *                                                                 
+ *         Author:  Ruan Huabin                                      
+ *          Email:  ruanhuabin@tsinghua.edu.cn                                        
+ *        Company:  Dep. of CS, Tsinghua Unversity                                      
+ *                                                                 
+ *******************************************************************/
+
 
 #ifndef CONSTANT_H_
 #define CONSTANT_H_

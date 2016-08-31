@@ -1,3 +1,21 @@
+/*******************************************************************
+ *       Filename:  zip.c                                     
+ *                                                                 
+ *    Description:                                        
+ *                                                                 
+ *        Version:  1.0                                            
+ *        Created:  2016年08月05日 11时48分06秒                                 
+ *       Revision:  none                                           
+ *       Compiler:  gcc                                           
+ *                                                                 
+ *         Author:  Ruan Huabin                                      
+ *          Email:  ruanhuabin@tsinghua.edu.cn                                        
+ *        Company:  Dep. of CS, Tsinghua Unversity                                      
+ *                                                                 
+ *******************************************************************/
+
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -352,6 +370,8 @@ void mzip_term(mzip_t *zip)
 }
 
 /*----------- for header  ------------------- */
+
+/*When using 8 path compress, the logic here may needs to change*/
 void pack_header(char *nbuf, btype_t btype, uint32_t len)
 {
 	unsigned char *buf = (unsigned char*) nbuf;
@@ -365,6 +385,7 @@ void pack_header(char *nbuf, btype_t btype, uint32_t len)
 	//printf("btype:%d, len:%d\n", btype, len);
 }
 
+/*When using 8 path compress, the logic here may needs to change*/
 void unpack_header(const char *nbuf, btype_t *btype, uint32_t *len)
 {
 	unsigned char *buf = (unsigned char*) nbuf;

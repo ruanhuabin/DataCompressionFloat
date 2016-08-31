@@ -1,18 +1,20 @@
 /*******************************************************************
- *       Filename:  simple_compress                                     
+ *       Filename:  mrc_tar.c                                     
  *                                                                 
- *    Description:  compress single precision float point number in mrc         
+ *    Description:                                        
  *                                                                 
  *        Version:  1.0                                            
- *        Created:  2016年08月04日 14时41分34秒                                 
+ *        Created:  2016年08月04日 11时45分36秒                                 
  *       Revision:  none                                           
  *       Compiler:  gcc                                           
  *                                                                 
  *         Author:  Ruan Huabin                                      
- *          Email:  ruanhuabin@gmail.com                                        
- *        Company:  HPC tsinghua                                      
+ *          Email:  ruanhuabin@tsinghua.edu.cn                                        
+ *        Company:  Dep. of CS, Tsinghua Unversity                                      
  *                                                                 
  *******************************************************************/
+
+
 
 #include <stdio.h>
 #include <stdlib.h>

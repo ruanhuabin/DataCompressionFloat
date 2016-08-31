@@ -1,3 +1,21 @@
+/*******************************************************************
+ *       Filename:  common.h                                     
+ *                                                                 
+ *    Description:                                         
+ *                                                                 
+ *        Version:  1.0                                            
+ *        Created:  2016年08月05日 11时49分37秒                                 
+ *       Revision:  none                                           
+ *       Compiler:  gcc                                           
+ *                                                                 
+ *         Author:  Ruan Huabin                                      
+ *          Email:  ruanhuabin@tsinghua.edu.cn                                        
+ *        Company:  Dep. of CS, Tsinghua Unversity                                      
+ *                                                                 
+ *******************************************************************/
+
+
+
 #ifndef _ZIP_COMMON_H_
 #define _ZIP_COMMON_H_
 
@@ -9,6 +27,7 @@ extern "C"
 #include <stdio.h>
 #include <stdint.h>
 #include "mrczip.h"
+#include "constant.h"
 
 
 typedef struct _context_t
@@ -33,7 +52,7 @@ typedef struct _mrczip_header_t
 	uint64_t fsz;
 	uint32_t chk;
 	char type; //compress strategy
-	char ztypes[4]; //compress method for each byte stream
+	char ztypes[COMPRESSION_PATH_NUM]; //compress method for each byte stream
 } mrczip_header_t;
 
 void init_mrczip_header(mrczip_header_t *hd, char type);

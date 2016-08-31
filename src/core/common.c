@@ -1,9 +1,27 @@
+/*******************************************************************
+ *       Filename:  common.c                                     
+ *                                                                 
+ *    Description:                                        
+ *                                                                 
+ *        Version:  1.0                                            
+ *        Created:  2016年08月04日 11时46分59秒                                 
+ *       Revision:  none                                           
+ *       Compiler:  gcc                                           
+ *                                                                 
+ *         Author:  Ruan Huabin                                      
+ *          Email:  ruanhuabin@tsinghua.edu.cn                                        
+ *        Company:  Dep. of CS, Tsinghua Unversity                                      
+ *                                                                 
+ *******************************************************************/
+
+
 
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
 #include <stdint.h>
 #include "common.h"
+#include "constant.h"
 
 uint64_t get_file_size(FILE *fp)
 {
@@ -96,7 +114,7 @@ void init_mrczip_header(mrczip_header_t *hd, char type)
 	hd->type = type;
 	hd->fsz = 0;
 	hd->chk = 0;
-	memset(hd->ztypes, 0, 4);
+	memset(hd->ztypes, 0, COMPRESSION_PATH_NUM);
 }
 
 
@@ -116,7 +134,7 @@ int read_mrczip_header(FILE *fin, mrczip_header_t *hd)
 	}
 	fread(&(hd->chk), sizeof(uint32_t), 1, fin);
 	fread(&(hd->type), sizeof(char), 1, fin);
-	for(int i = 0; i < 4; i++)
+	for(int i = 0; i < COMPRESSION_PATH_NUM; i++)
 	{
 		fread(&(hd->ztypes[i]), sizeof(char), 1, fin);
 	}
@@ -131,7 +149,7 @@ int write_mrczip_header(FILE *fout, mrczip_header_t *hd)
 	fwrite(&(hd->fsz), sizeof(uint64_t), 1, fout);
 	fwrite(&(hd->chk), sizeof(uint32_t), 1, fout);
 	fwrite(&(hd->type), sizeof(char), 1, fout);
-	for(int i = 0; i < 4; i++)
+	for(int i = 0; i < COMPRESSION_PATH_NUM; i++)
 	{
 		fwrite(&(hd->ztypes[i]), sizeof(char), 1, fout);
 	}
