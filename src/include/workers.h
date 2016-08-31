@@ -1,17 +1,17 @@
 /*******************************************************************
- *       Filename:  workers.h                                     
- *                                                                 
- *    Description:                                         
- *                                                                 
- *        Version:  1.0                                            
- *        Created:  2016年08月12日 11时50分40秒                                 
- *       Revision:  none                                           
- *       Compiler:  gcc                                           
- *                                                                 
- *         Author:  Ruan Huabin                                      
- *          Email:  ruanhuabin@tsinghua.edu.cn                                        
- *        Company:  Dep. of CS, Tsinghua Unversity                                      
- *                                                                 
+ *       Filename:  workers.h
+ *
+ *    Description:
+ *
+ *        Version:  1.0
+ *        Created:  2016年08月12日 11时50分40秒
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  Ruan Huabin
+ *          Email:  ruanhuabin@tsinghua.edu.cn
+ *        Company:  Dep. of CS, Tsinghua Unversity
+ *
  *******************************************************************/
 
 

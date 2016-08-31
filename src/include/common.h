@@ -1,17 +1,17 @@
 /*******************************************************************
- *       Filename:  common.h                                     
- *                                                                 
- *    Description:                                         
- *                                                                 
- *        Version:  1.0                                            
- *        Created:  2016年08月05日 11时49分37秒                                 
- *       Revision:  none                                           
- *       Compiler:  gcc                                           
- *                                                                 
- *         Author:  Ruan Huabin                                      
- *          Email:  ruanhuabin@tsinghua.edu.cn                                        
- *        Company:  Dep. of CS, Tsinghua Unversity                                      
- *                                                                 
+ *       Filename:  common.h
+ *
+ *    Description:
+ *
+ *        Version:  1.0
+ *        Created:  2016年08月05日 11时49分37秒
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  Ruan Huabin
+ *          Email:  ruanhuabin@tsinghua.edu.cn
+ *        Company:  Dep. of CS, Tsinghua Unversity
+ *
  *******************************************************************/
 
 
@@ -32,12 +32,12 @@ extern "C"
 
 typedef struct _context_t
 {
-	uint32_t fileCount;
-	uint64_t allFileSize;
-	uint64_t allZipFileSize;
+    uint32_t fileCount;
+    uint64_t allFileSize;
+    uint64_t allZipFileSize;
 
-	double zipTime; //zip ztime;
-	double unzipTime; //unzip uztime;
+    double zipTime; //zip ztime;
+    double unzipTime; //unzip uztime;
 } ctx_t;
 
 void init_context(ctx_t *ctx);
@@ -49,10 +49,10 @@ void ctx_print_more(ctx_t *ctx, const char *prompt);
 
 typedef struct _mrczip_header_t
 {
-	uint64_t fsz;
-	uint32_t chk;
-	char type; //compress strategy
-	char ztypes[COMPRESSION_PATH_NUM]; //compress method for each byte stream
+    uint64_t fsz;
+    uint32_t chk;
+    char type; //compress strategy
+    char ztypes[COMPRESSION_PATH_NUM]; //compress method for each byte stream
 } mrczip_header_t;
 
 void init_mrczip_header(mrczip_header_t *hd, char type);

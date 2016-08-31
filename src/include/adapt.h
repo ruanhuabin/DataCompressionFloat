@@ -1,17 +1,17 @@
 /*******************************************************************
- *       Filename:  adapt.h                                     
- *                                                                 
- *    Description:                                         
- *                                                                 
- *        Version:  1.0                                            
- *        Created:  2016年08月07日 11时49分13秒                                 
- *       Revision:  none                                           
- *       Compiler:  gcc                                           
- *                                                                 
- *         Author:  Ruan Huabin                                      
- *          Email:  ruanhuabin@tsinghua.edu.cn                                        
- *        Company:  Dep. of CS, Tsinghua Unversity                                      
- *                                                                 
+ *       Filename:  adapt.h
+ *
+ *    Description:
+ *
+ *        Version:  1.0
+ *        Created:  2016年08月07日 11时49分13秒
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  Ruan Huabin
+ *          Email:  ruanhuabin@tsinghua.edu.cn
+ *        Company:  Dep. of CS, Tsinghua Unversity
+ *
  *******************************************************************/
 
 
@@ -32,12 +32,12 @@ int zip_uncompress(ctx_t *ctx, const char *src, const char *dst);
 
 typedef struct _file_container_t
 {
-	char **srcs;
-	char **dsts;
-	int idx;
-	int size;
-	int fileNum; //size:[0, fileNum], idx~[0, size]
-	pthread_mutex_t lock;
+    char **srcs;
+    char **dsts;
+    int idx;
+    int size;
+    int fileNum; //size:[0, fileNum], idx~[0, size]
+    pthread_mutex_t lock;
 } file_container_t;
 
 int init_file_container(file_container_t *file_container, char *file_list_descriptor, char *prefix, char *suffix);

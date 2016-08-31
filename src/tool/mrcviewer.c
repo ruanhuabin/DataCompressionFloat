@@ -1,17 +1,17 @@
 /*******************************************************************
- *       Filename:  mrcviewer.c                                     
- *                                                                 
- *    Description:                                        
- *                                                                 
- *        Version:  1.0                                            
- *        Created:  2016年08月03日 09时24分27秒                                 
- *       Revision:  none                                           
- *       Compiler:  gcc                                           
- *                                                                 
- *         Author:  Ruan Huabin                                      
- *          Email:  ruanhuabin@gmail.com                                        
- *        Company:  HPC tsinghua                                      
- *                                                                 
+ *       Filename:  mrcviewer.c
+ *
+ *    Description:
+ *
+ *        Version:  1.0
+ *        Created:  2016年08月03日 09时24分27秒
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  Ruan Huabin
+ *          Email:  ruanhuabin@gmail.com
+ *        Company:  HPC tsinghua
+ *
  *******************************************************************/
 #include <stdio.h>
 #include <string.h>
@@ -81,7 +81,6 @@ void print_mrc_header(mrc_header_t *header)
     printf("Number of rows    : ny  = %d\n", header->ny);
     printf("Number of sections: nz  = %d\n", header->nz);
     printf("image data type   : mod = %d\n", header->mod);
-
 }
 
 void print_mrc_data(float *data, int nx, int ny, int nz)
@@ -89,12 +88,14 @@ void print_mrc_data(float *data, int nx, int ny, int nz)
     for (int i = 0; i < nz; i++)
     {
         printf("Sections: %d\n", i);
+
         for (int j = 0; j < ny; j++)
         {
             for (int k = 0; k < nx; k++)
             {
                 printf("%.6f ", data[i * ny * nx + j * ny + k]);
             }
+
             printf("\n");
         }
 
@@ -104,8 +105,7 @@ void print_mrc_data(float *data, int nx, int ny, int nz)
 
 int main(int argc, char **argv)
 {
-
-    if(argc != 2)
+    if (argc != 2)
     {
         printf("Usage: %s <mrc file name>\n", argv[0]);
         printf("e.g: %s image.mrc\n", argv[0]);
@@ -114,33 +114,30 @@ int main(int argc, char **argv)
 
     FILE *mrcFile = fopen(argv[1], "rb");
 
-    if(mrcFile == NULL)
+    if (mrcFile == NULL)
     {
         printf("Open input file [%s] failed: [%s:%d]", argv[1], __FILE__,
-                __LINE__);
+               __LINE__);
         exit(-1);
     }
+
 
     mrc_fmt_t mrcInstance;
     fread(&mrcInstance.header, sizeof(mrc_header_t), 1, mrcFile);
     print_mrc_header(&mrcInstance.header);
-
     int nx = mrcInstance.header.nx;
     int ny = mrcInstance.header.ny;
     int nz = mrcInstance.header.nz;
-
     mrcInstance.imageData = (float *) malloc(nx * ny * nz * sizeof(float));
-    if(mrcInstance.imageData == NULL)
+
+    if (mrcInstance.imageData == NULL)
     {
         printf("Memory allocate failed: [%s:%d]\n", __FILE__, __LINE__);
         exit(-1);
     }
 
     fread(mrcInstance.imageData, sizeof(float), nx * ny * nz, mrcFile);
-
     print_mrc_data(mrcInstance.imageData, nx, ny, nz);
-
     fclose(mrcFile);
-
     return 0;
 }

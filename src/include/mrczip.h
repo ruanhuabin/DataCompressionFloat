@@ -1,17 +1,17 @@
 /*******************************************************************
- *       Filename:  mrczip.h                                     
- *                                                                 
- *    Description:                                         
- *                                                                 
- *        Version:  1.0                                            
- *        Created:  2016年08月08日 11时50分20秒                                 
- *       Revision:  none                                           
- *       Compiler:  gcc                                           
- *                                                                 
- *         Author:  Ruan Huabin                                      
- *          Email:  ruanhuabin@tsinghua.edu.cn                                        
- *        Company:  Dep. of CS, Tsinghua Unversity                                      
- *                                                                 
+ *       Filename:  mrczip.h
+ *
+ *    Description:
+ *
+ *        Version:  1.0
+ *        Created:  2016年08月08日 11时50分20秒
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  Ruan Huabin
+ *          Email:  ruanhuabin@tsinghua.edu.cn
+ *        Company:  Dep. of CS, Tsinghua Unversity
+ *
  *******************************************************************/
 
 
@@ -30,13 +30,13 @@ extern "C"
 /*block type */
 typedef enum
 {
-	COMPRESSED = 0, RAW
+    COMPRESSED = 0, RAW
 } btype_t;
 
 /*compressor type */
 typedef enum
 {
-	ZLIB_DEF = 0, ZLIB_INF, LZ4_DEF, LZ4_INF, LZ4HC_DEF, LZ4HC_INF
+    ZLIB_DEF = 0, ZLIB_INF, LZ4_DEF, LZ4_INF, LZ4HC_DEF, LZ4HC_INF
 } ztype_t;
 
 typedef struct _mzip_t mzip_t;
@@ -46,28 +46,28 @@ typedef int (*unzipfun_p)(mzip_t *zip, btype_t, int outlen, char **out);
 
 struct _mzip_t
 {
-	uint32_t chk;
-	uint32_t inlen;
-	uint32_t outlen; //no use right now
-	ztype_t ztype;
+    uint32_t chk;
+    uint32_t inlen;
+    uint32_t outlen; //no use right now
+    ztype_t ztype;
 
-	void *zipper;
+    void *zipper;
 
-	char *in;
-	char *out;
-	char *zin;
-	char *zout;
+    char *in;
+    char *out;
+    char *zin;
+    char *zout;
 
-	zipfun_p zipfun;
-	zipfun_p_ex zipfun_ex;
-	unzipfun_p unzipfun;
+    zipfun_p zipfun;
+    zipfun_p_ex zipfun_ex;
+    unzipfun_p unzipfun;
 
-	/*should move to somewhere else*/
-	uint32_t fnum;
-	uint64_t fsz;
-	uint64_t zfsz;
-	double compressTime; //zip
-	double time2; //unzip
+    /*should move to somewhere else*/
+    uint32_t fnum;
+    uint64_t fsz;
+    uint64_t zfsz;
+    double compressTime; //zip
+    double time2; //unzip
 };
 
 int init_mrc_zip_stream(mzip_t *zip, uint32_t chk, ztype_t ztype, int strategy);
@@ -82,9 +82,9 @@ int mzip_def_test(mzip_t *zip, char **p, int *len);
 
 typedef struct _fheader_t
 {
-	uint64_t fsize;         // original file size
-	uint32_t chk;           // original chunk size
-	char ztype;         // compressor type:zlib(0), lz4(2), lz4hc(4)
+    uint64_t fsize;         // original file size
+    uint32_t chk;           // original chunk size
+    char ztype;         // compressor type:zlib(0), lz4(2), lz4hc(4)
 } fheader_t;
 
 int mzip_def_file(mzip_t *zip, const char *src, const char *dst);

@@ -1,17 +1,17 @@
 /*******************************************************************
- *       Filename:  constant.h                                     
- *                                                                 
- *    Description:                                         
- *                                                                 
- *        Version:  1.0                                            
- *        Created:  2016年08月14日 11时49分56秒                                 
- *       Revision:  none                                           
- *       Compiler:  gcc                                           
- *                                                                 
- *         Author:  Ruan Huabin                                      
- *          Email:  ruanhuabin@tsinghua.edu.cn                                        
- *        Company:  Dep. of CS, Tsinghua Unversity                                      
- *                                                                 
+ *       Filename:  constant.h
+ *
+ *    Description:
+ *
+ *        Version:  1.0
+ *        Created:  2016年08月14日 11时49分56秒
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  Ruan Huabin
+ *          Email:  ruanhuabin@tsinghua.edu.cn
+ *        Company:  Dep. of CS, Tsinghua Unversity
+ *
  *******************************************************************/
 
 

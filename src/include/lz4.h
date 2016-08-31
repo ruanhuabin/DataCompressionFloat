@@ -49,8 +49,8 @@ extern "C"
 // Simple Functions
 //****************************
 
-int LZ4_compress(const char* source, char* dest, int inputSize);
-int LZ4_uncompress(const char* source, char* dest, int outputSize);
+int LZ4_compress(const char *source, char *dest, int inputSize);
+int LZ4_uncompress(const char *source, char *dest, int outputSize);
 
 /*
  LZ4_compress() :
@@ -76,7 +76,7 @@ int LZ4_uncompress(const char* source, char* dest, int outputSize);
 //****************************
 static inline int LZ4_compressBound(int isize)
 {
-	return ((isize) + ((isize) / 255) + 16);
+    return ((isize) + ((isize) / 255) + 16);
 }
 #define           LZ4_COMPRESSBOUND(    isize)            ((isize) + ((isize)/255) + 16)
 
@@ -92,8 +92,8 @@ static inline int LZ4_compressBound(int isize)
  note : this function is limited by "int" range (2^31-1)
  */
 
-int LZ4_compress_limitedOutput(const char* source, char* dest, int isize,
-		int maxOutputSize);
+int LZ4_compress_limitedOutput(const char *source, char *dest, int isize,
+                               int maxOutputSize);
 
 /*
  LZ4_compress_limitedOutput() :
@@ -107,8 +107,8 @@ int LZ4_compress_limitedOutput(const char* source, char* dest, int isize,
  or 0 if the compression fails
  */
 
-int LZ4_uncompress_unknownOutputSize(const char* source, char* dest, int isize,
-		int maxOutputSize);
+int LZ4_uncompress_unknownOutputSize(const char *source, char *dest, int isize,
+                                     int maxOutputSize);
 
 /*
  LZ4_uncompress_unknownOutputSize() :
