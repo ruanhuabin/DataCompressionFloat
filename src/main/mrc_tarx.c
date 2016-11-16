@@ -346,7 +346,7 @@ int main(int argc, char *argv[])
 {
     //printf("[Compress data with hpos]\n");
     //get_opt(argc, argv);
-    char *opt_str = "hi:o:b:t:n:d:";
+    char *opt_str = "hi:o:b:t:n:d:s:";
     int opt = 0;
     const char *ifcFile = NULL;
     const char *outputDir = "/tmp/";
@@ -354,6 +354,7 @@ int main(int argc, char *argv[])
     int threadNum = 2;
     extern int isTestThroughput ;
     const char *operType = "zip";
+    const char *dataConvertedType = "float";
 
     if (argc < 2)
     {
@@ -389,6 +390,9 @@ int main(int argc, char *argv[])
                 operType = optarg;
                 break;
 
+            case 's':
+                dataConvertedType = optarg;
+                break;
             case 'h':
                 usage(argv);
                 return 0;

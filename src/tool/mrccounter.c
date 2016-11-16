@@ -1,21 +1,23 @@
 /*******************************************************************
- *       Filename:  mrcviewer.c
- *
- *    Description:
- *
- *        Version:  1.0
- *        Created:  2016年08月03日 09时24分27秒
- *       Revision:  none
- *       Compiler:  gcc
- *
- *         Author:  Ruan Huabin
- *          Email:  ruanhuabin@gmail.com
- *        Company:  HPC tsinghua
- *
+ *       Filename:  mrccounter.c                                     
+ *                                                                 
+ *    Description:                                        
+ *                                                                 
+ *        Version:  1.0                                            
+ *        Created:  2016年11月15日 09时34分07秒                                 
+ *       Revision:  none                                           
+ *       Compiler:  gcc                                           
+ *                                                                 
+ *         Author:  Ruan Huabin                                      
+ *          Email:  ruanhuabin@tsinghua.edu.cn                                        
+ *        Company:  Dep. of CS, Tsinghua Unversity                                      
+ *                                                                 
  *******************************************************************/
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 typedef struct _mrc_header__
 {
     /* Number of columns, rows, and sections */
@@ -102,25 +104,51 @@ void print_mrc_data(float *data, int nx, int ny, int nz)
         printf("\n");
     }
 }
-void print_mrc_data2(float *data, int nx, int ny, int nz)
+
+int mycompare(const void *a, const void *b)
 {
-    for (int i = 0; i < nz; i++)
+    int ia = *(int *)a;
+    int ib = *(int *)b;
+
+    if(ia < ib)
     {
-        printf("Sections: %d\n", i);
+        return 1;
+    }
+    else if(ia > ib)
+    {
+        return -1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+void print_freq_info(int *freq_info, int n)
+{
 
-        for (int j = 0; j < ny; j++)
+    //qsort(freq_info, n, sizeof(int), mycompare);
+
+    for(int i = 0; i < n; i ++)
+    {
+        if(freq_info[i] != 0)
         {
-            for (int k = 0; k < nx; k++)
-            {
-                printf("%.6f\n", data[i * ny * nx + j * ny + k]);
-            }
-
+           printf("%6d:%10d\n", i - 127, freq_info[i]);
         }
+     
 
-        printf("\n");
     }
 }
 
+void count_freq(float *data, int n, int *freq_info)
+{
+    short int currValue = 0;
+    for(int i = 0; i < n; i ++)
+    {
+        currValue = (short)round(data[i]);
+        //some values are negative, so we add an offset with value 127 to be the array's index
+        freq_info[currValue + 127] ++;
+    }
+}
 
 int main(int argc, char **argv)
 {
@@ -156,7 +184,20 @@ int main(int argc, char **argv)
     }
 
     fread(mrcInstance.imageData, sizeof(float), nx * ny * nz, mrcFile);
-    print_mrc_data2(mrcInstance.imageData, nx, ny, nz);
+
+    int *freq_info = (int *)malloc(1024 * sizeof(int));
+    for(int i = 0; i < 1024; i ++)
+    {
+        freq_info[i] = 0;
+    }
+    count_freq(mrcInstance.imageData, nx * ny * nz, freq_info);
+
+    print_freq_info(freq_info, 1024);
+
+    free(freq_info);
+
+    //print_mrc_data(mrcInstance.imageData, nx, ny, nz);
     fclose(mrcFile);
     return 0;
 }
+

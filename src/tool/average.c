@@ -344,6 +344,42 @@ void get_topN(stat_info_t arr[], int32_t low, int32_t high, const int32_t topn)
         get_topN(arr, i + 1, high, topn - n);
     }
 }
+
+
+void checkIsEqual(float *a, float *b, int n, int chunkIndex, int chunk_size)
+{
+    int startIndex = 0;
+
+    if(chunkIndex == 0)
+        startIndex = 256;
+    for(int i = startIndex; i < n; i ++)
+    {
+        int f1 = (int)round(a[i]);
+        int f2 = (int)round(b[i]);
+
+        if(f1 != f2)
+        {
+            printf("index = %d: a = %f, b = %f, f1 = %d, f2 = %d\n", chunkIndex * chunk_size + i, a[i], b[i], f1, f2);
+        }
+
+    }
+}
+
+
+float calCurrentSum(float *a, int n)
+{
+    float suma = 0.0f;
+
+    for(int i = 0; i < n; i ++)
+    {
+        suma += a[i];
+    }
+
+    return suma;
+
+
+
+}
 int main ( int argc, char *argv[] )
 {
     char *opt_str = "ha:b:k:";
@@ -449,43 +485,27 @@ int main ( int argc, char *argv[] )
     unsigned int chunkIndex = 0;
     unsigned int num = 0;
     unsigned int totalPointsRead = 0;
+    
+    float suma = 0.0f;
+    float sumb = 0.0f;
 
     while (num1 > 0 && num2 > 0)
     {
         num = num1 < num2 ? num1 : num2;
         totalPointsRead += num;
         fprintf(stderr, "chunkIndex = %u, num1 = %u, num2 = %u, totalPointsRead = %u, maxCouldLoad = %u\n", chunkIndex, num1, num2, totalPointsRead, MAX_ITEM_NUM);
+        
+        suma += calCurrentSum(buffer1, num);
+        sumb += calCurrentSum(buffer2, num);
         chunkIndex ++;
-        calculateDiff(buffer1, buffer2, num, stat_points);
         num1 = fread(buffer1, sizeof(float), ITEMS_TO_READ, origInputFile);
         num2 = fread(buffer2, sizeof(float), ITEMS_TO_READ, decompressInputFile);
     }
 
-    fprintf(stderr, "Total Points = %u\n", count);
-    //qsort(stat_points, count, sizeof(stat_info_t), comparator);
-    topK(stat_points, rank, count);
-    /*
-     *get_topN(stat_points, 0, count - 1, rank);
-     */
-    /**
-     *  Only sort top N elements
-     */
-    /*
-     *qsort(stat_points, rank, sizeof(stat_info_t), comparator);
-     */
-    float n1 = 0.0f;
-    float n2 = 0.0f;
-    float err = 0.0f;
-    float relativeErr = 0.0f;
+    fprintf(stderr, "Total Points = %u\n", totalPointsRead);
+    fprintf(stderr, "Average: [file1, file2] = [%f, %f]\n", suma/totalPointsRead, sumb/totalPointsRead);
 
-    for (int i = 0; i < rank; i ++)
-    {
-        n1 = stat_points[i].n1;
-        n2 = stat_points[i].n2;
-        err = stat_points[i].err;
-        relativeErr = stat_points[i].relativeErr;
-        printf("%f %f %f %E %f %E\n", n1, n2, err, err, relativeErr, relativeErr);
-    }
+
 
     free(buffer1);
     free(buffer2);

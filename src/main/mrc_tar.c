@@ -21,7 +21,7 @@
 #include "common.h"
 #include "workers.h"
 
-int mrc_compress(const char *src, const char *dst, const int bitsToMask)
+int mrc_compress(const char *src, const char *dst, const int bitsToMask, const char *dataConvertedType)
 {
     FILE *fin = fopen(src, "rb");
 
@@ -47,13 +47,13 @@ int mrc_compress(const char *src, const char *dst, const int bitsToMask)
     init_context(&ctx);
     ctx.fileCount += 1;
     ctx.allFileSize += get_file_size(fin);
-    run_compress(fin, &ctx, fout, bitsToMask);
+    run_compress(fin, &ctx, fout, bitsToMask, dataConvertedType);
     fclose(fin);
     fclose(fout);
     return 0;
 }
 
-int mrc_uncompress(const char *src, const char *dst)
+int mrc_uncompress(const char *src, const char *dst, const char *dataConvertedType)
 {
     FILE *fin, *fout;
     ctx_t ctx;
@@ -72,7 +72,7 @@ int mrc_uncompress(const char *src, const char *dst)
     init_mrczip_header(&hd, 0);
     read_mrczip_header(fin, &hd);
     print_mrczip_header(&hd, "Header Info in Decompression");
-    run_uncompress(fin, &ctx, &hd, fout);
+    run_uncompress(fin, &ctx, &hd, fout, dataConvertedType);
     print_context_info(&ctx, "Contex Info after Decompression");
     fclose(fout);
     fclose(fin);
@@ -93,18 +93,21 @@ void usage(char **argv)
     printf("\t");
     printf("-b\t bits to be erased, range[0..32], default is 0\n\n");
     printf("\t");
+    printf("-s\t data type to be converted to when compressed/decompressed, value should be [float | int], default is float\n\n");
+    printf("\t");
     printf(
         "-t\t operation type, e.g compress or decompressed file, value should be [zip | unzip], default is zip\n\n");
 }
 
 int main(int argc, char *argv[])
 {
-    char *opt_str = "hi:o:b:t:";
+    char *opt_str = "hi:o:b:t:s:";
     int opt = 0;
     const char *inputFileName = NULL;
     const char *outputFileName = NULL;
     int bitsToErase = 0;
     const char *operType = "zip";
+    const char *dataConvertedType = "float";
 
     if (argc < 2)
     {
@@ -132,6 +135,9 @@ int main(int argc, char *argv[])
                 operType = optarg;
                 break;
 
+            case 's':
+                dataConvertedType = optarg;
+                break;
             case 'h':
                 usage(argv);
                 return 0;
@@ -147,12 +153,12 @@ int main(int argc, char *argv[])
 
     if (strcmp(operType, "zip") == 0)
     {
-        mrc_compress(inputFileName, outputFileName, bitsToErase);
+        mrc_compress(inputFileName, outputFileName, bitsToErase, dataConvertedType);
     }
 
     else if (strcmp(operType, "unzip") == 0)
     {
-        mrc_uncompress(inputFileName, outputFileName);
+        mrc_uncompress(inputFileName, outputFileName, dataConvertedType);
     }
 
     return 0;

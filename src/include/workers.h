@@ -27,8 +27,8 @@ extern "C"
 #include "common.h" //prediction_t
 
 /* --- no predition, no steady points --- */
-int run_compress(FILE *fin, ctx_t *ctx, FILE *fout, const int compressPrecision);
-int run_uncompress(FILE *fin, ctx_t *ctx, mrczip_header_t *hd, FILE *fout);
+int run_compress(FILE *fin, ctx_t *ctx, FILE *fout, const int compressPrecision, const char *dataConvertedType);
+int run_uncompress(FILE *fin, ctx_t *ctx, mrczip_header_t *hd, FILE *fout, const char *dataConvertedType);
 
 ///////////////////////////////////////////////////////////////
 #ifdef __cplusplus

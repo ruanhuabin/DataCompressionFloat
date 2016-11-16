@@ -46,7 +46,7 @@ int zip_compress(ctx_t *ctx, const char *src, const char *dst, int bitsToLoss)
     fprintf(stderr, "Thread %lu is starting to compress file [%s]\n", pthread_self(), src);
     ctx->fileCount += 1;
     ctx->allFileSize += get_file_size(fin);
-    run_compress(fin, ctx, fout, bitsToLoss);
+    run_compress(fin, ctx, fout, bitsToLoss, "float");
     fclose(fout);
     fclose(fin);
     return 0;
@@ -83,7 +83,7 @@ int zip_uncompress(ctx_t *ctx, const char *src, const char *dst)
         return -1;
     }
 
-    run_uncompress(fin, ctx, &hd, fout);
+    run_uncompress(fin, ctx, &hd, fout, "float");
     fclose(fout);
     fclose(fin);
     return 0;

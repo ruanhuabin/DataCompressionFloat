@@ -121,6 +121,62 @@ void apply_mask_to_int(int *buffer, int startIndex, int num, const int bitsToEra
     }
 }
 
+
+void convert_float_to_int(float *buf, int *data_to_compress, int num, int isFirstChk)
+{
+
+    int startIndex = 0;
+    if(isFirstChk)
+    {
+        memcpy(data_to_compress, buf, 1024);
+        startIndex = 256;
+    }
+
+    char *tmp_buf = (char *)malloc(num);
+
+    for(int i = startIndex; i < num; i ++)
+    {
+        tmp_buf[i] = (char)round(buf[i]);
+    }
+
+    for(int i = startIndex; i < num; i ++)
+    {
+        char *p1 = (char *)&data_to_compress[i];
+        *p1 = tmp_buf[i];
+    } 
+
+    free(tmp_buf);
+}
+void split_convert_float_to_one_byte_stream(float *buf, int num, char *zins[], int bitsToMask,  int isFirstChk, int *data_to_compress)
+{
+    char *p0, *p1, *p2, *p3;
+
+    convert_float_to_int(buf, data_to_compress, num, isFirstChk);
+    char *p = (char *) data_to_compress;
+    p0 = zins[0];
+    p1 = zins[1];
+    p2 = zins[2];
+    p3 = zins[3];
+    /**
+     *  1024 Bytes in the first chunk is the header info in MRC file, we should not apply lossy compression to it
+     */
+    //apply_mask(buf, 0, num, bitsToMask, isFirstChk);
+
+    /**
+     * Make zips[i] to corresponding byte stream
+     */
+    for (int i = 0; i < num; i++)
+    {
+        *p0++ = *p++;
+        *p1++ = *p++;
+        *p2++ = *p++;
+        *p3++ = *p++;
+    }
+}
+
+
+
+
 void split_float_to_byte_stream(float *buf, int num, char *zins[], int bitsToMask,  int isFirstChk)
 {
     char *p0, *p1, *p2, *p3;
@@ -385,6 +441,74 @@ void merge_byte_to_float_stream(float *buf, int num, char *zouts[])
     return;
 }
 
+void merge_one_byte_to_float_stream(float *buf, int num, char *zouts[], int isFirstChunk)
+{
+    char *p0, *p1, *p2, *p3;
+    char *p = (char *) buf;
+    p0 = zouts[0];
+    p1 = zouts[1];
+    p2 = zouts[2];
+    p3 = zouts[3];
+
+    //static int index = 0;
+    if(isFirstChunk)
+    {
+        /*
+         *for(int i = 0; i < 256; i ++)
+         *{
+         *    *p++ = *p0++;
+         *    *p++ = *p1++;
+         *    *p++ = *p2++;
+         *    *p++ = *p3++;
+         *}
+         */
+
+        for(int i = 0; i < 256; i ++)
+        {
+            p[i * 4 + 0] = p0[i];
+            p[i * 4 + 1] = p1[i];
+            p[i * 4 + 2] = p2[i];
+            p[i * 4 + 3] = p3[i];
+        }
+        
+        //printf("=========================<%d>======================\n", index ++);
+        for(int i = 256; i < num; i ++)
+        {
+            buf[i] = (float)p0[i];
+        //    printf("%d:%d:%f\n", i, p0[i], buf[i]);    
+        }
+       // printf("===================================================\n");
+
+    }
+    else
+    {
+    
+        for(int i = 0; i < num; i ++)
+        {
+            buf[i] = (float)p0[i];
+        }
+    }
+
+
+    return;
+    /*static int index = 0;*/
+    /*printf("=========================<%d>=============================\n", index ++);*/
+    /*for (i = 0; i < num; i++)*/
+    /*{*/
+
+    /*    buf[i] = (float)p0[i];*/
+    /*    printf("%d:%d:%f\n", i, p0[i], buf[i]);*/
+        /*
+         **p++ = *p0++;
+         **p++ = *p1++;
+         **p++ = *p2++;
+         **p++ = *p3++;
+         */
+    /*}*/
+    /*printf("======================================================\n");*/
+
+    /*return;*/
+}
 void split_int_to_byte_stream(float *buf, int num, char *zins[], int bitsToMask,  int isFirstChk)
 {
     fprintf(stderr, "Start to covert float stream to int stream\n");
@@ -441,7 +565,7 @@ void merge_byte_to_int_stream(float *buf, int num, char *zouts[])
 
 
 
-int run_uncompress(FILE *fin, ctx_t *ctx, mrczip_header_t *hd, FILE *fout)
+int run_uncompress(FILE *fin, ctx_t *ctx, mrczip_header_t *hd, FILE *fout, const char *dataConvertedType)
 {
     uint32_t i, j, num;
     uint32_t chk_size;
@@ -464,10 +588,30 @@ int run_uncompress(FILE *fin, ctx_t *ctx, mrczip_header_t *hd, FILE *fout)
     /*Calculate how many chunks we have*/
     num = fsz / chk_size;
 
+    int isFirstChunk = 0;
     for (i = 0; i < num; i++)
     {
+
+        if( i == 0 )
+        {
+            isFirstChunk = 1;
+        }
+        else
+        {
+            isFirstChunk = 0;
+        }
         uncompress_byte_stream(fin, zips, outs, chk_size);
-        merge_byte_to_float_stream(buf, chk_size, outs);
+        if(strcmp(dataConvertedType, "int") == 0)
+        {
+        
+            printf("Decompress data as int type, isFirstChunk = %d\n", isFirstChunk);
+            merge_one_byte_to_float_stream(buf, chk_size, outs, isFirstChunk);
+        }
+        else
+        {
+            printf("Decompress data as float type\n");
+            merge_byte_to_float_stream(buf, chk_size, outs);
+        }
 
         //    for(int i = 0; i < chk_size; i ++ )
         //    {
@@ -492,7 +636,16 @@ int run_uncompress(FILE *fin, ctx_t *ctx, mrczip_header_t *hd, FILE *fout)
     {
         uncompress_byte_stream(fin, zips, outs, chk_size);
         start = now_sec();
-        merge_byte_to_float_stream(buf, chk_size, outs);
+        if(strcmp(dataConvertedType, "int") == 0)
+        {
+            printf("The rest part is treated as int\n");
+            merge_one_byte_to_float_stream(buf, chk_size, outs, 0);
+        }
+        else
+        {
+            printf("The rest part is treated as float\n");
+            merge_byte_to_float_stream(buf, chk_size, outs);
+        }
         ctx->unzipTime += (now_sec() - start);
 
         //#ifdef _OUTPUT_UNZIP_
@@ -522,7 +675,7 @@ int run_uncompress(FILE *fin, ctx_t *ctx, mrczip_header_t *hd, FILE *fout)
     return 0;
 }
 
-int run_compress(FILE *fin, ctx_t *ctx, FILE *fout, const int bitsToMask)
+int run_compress(FILE *fin, ctx_t *ctx, FILE *fout, const int bitsToMask, const char *dataConvertedType)
 {
     int j;
     int num;
@@ -537,6 +690,8 @@ int run_compress(FILE *fin, ctx_t *ctx, FILE *fout, const int bitsToMask)
     double begin, zbegin; //for timing
     begin = now_sec();
     buf = (float *) malloc(sizeof(float) * CHUNK_SIZE);
+
+    int *data_to_compress = (int *)malloc(sizeof(int) * CHUNK_SIZE);
 
     if (buf == NULL)
     {
@@ -612,7 +767,17 @@ int run_compress(FILE *fin, ctx_t *ctx, FILE *fout, const int bitsToMask)
     while (num > 0)
     {
         begin = now_sec();
-        split_float_to_byte_stream(buf, num, zins, bitsToMask, isFirstChk);
+        if(strcmp(dataConvertedType, "int") == 0)
+        {
+            printf("Treate data as int number\n");
+            memset(data_to_compress, 0, CHUNK_SIZE * sizeof(int));
+            split_convert_float_to_one_byte_stream(buf, num, zins, 24, isFirstChk, data_to_compress);
+        }
+        else
+        {
+            printf("Treate data as float number....\n");
+            split_float_to_byte_stream(buf, num, zins, bitsToMask, isFirstChk);
+        }
         //split_float_to_byte_stream_v2(buf, num, zins, bitsToMask, isFirstChk);
         //split_float_to_8byte_stream(buf, num, zins, bitsToMask, isFirstChk);
         //split_float_to_16byte_stream(buf, num, zins, bitsToMask, isFirstChk);
@@ -678,6 +843,7 @@ int run_compress(FILE *fin, ctx_t *ctx, FILE *fout, const int bitsToMask)
     }
 
     free(buf);
+    free(data_to_compress);
     //  for(int i = 0; i < 4; i ++)
     //  {
     //    fclose(fpSplit[i]);
