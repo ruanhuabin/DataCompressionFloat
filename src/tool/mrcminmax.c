@@ -39,16 +39,11 @@ void usage(char **argv)
     printf("\nwhere:\n");
     printf("\t");
     printf("-i\tinput file that need to erase lowest byte\n\n");
-    printf("\t");
-    printf(
-        "-o\t output file that save the float number with lowerest byte to be \\0\n\n");
-    printf("\t");
-    printf("-b\t bits to be erased, default is 8\n\n");
 }
 
 int main(int argc, char *argv[])
 {
-    char *opt_str = "hi:o:b:";
+    char *opt_str = "hi:";
     int opt = 0;
     const char *inputFileName = NULL;
     const char *outputFileName = NULL;
@@ -67,15 +62,6 @@ int main(int argc, char *argv[])
             case 'i':
                 inputFileName = optarg;
                 break;
-
-            case 'o':
-                outputFileName = optarg;
-                break;
-
-            case 'b':
-                bitsToErase = atoi(optarg);
-                break;
-
             case 'h':
                 usage(argv);
                 return 0;
@@ -90,7 +76,6 @@ int main(int argc, char *argv[])
     printf("Input File = %s, Output File = %s, bitsToErase = %d\n",
            inputFileName, outputFileName, bitsToErase);
     FILE *inputFile = fopen(inputFileName, "rb");
-    FILE *outputFile = fopen(outputFileName, "wb");
 
     if (inputFile == NULL)
     {
@@ -99,43 +84,58 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
-    if (outputFile == NULL)
-    {
-        fprintf(stderr, "[%s:%d] open file [%s] failed\n", __FILE__, __LINE__,
-                outputFileName);
-        exit(-1);
-    }
 
     const int ITEMS_TO_READ = 1024 * 1024 * 8;
     float *buffer1 = (float *) malloc(ITEMS_TO_READ * sizeof(float));
     int num1 = fread(buffer1, 1, 1024, inputFile);
-    fwrite(buffer1, 1, 1024, outputFile);
     printf("num1 = %d\n", num1);
     num1 = fread(buffer1, sizeof(float), ITEMS_TO_READ, inputFile);
     printf("num1 = %d\n", num1);
 
+
+    float max = buffer1[0];
+    float min = buffer1[0];
+
+    int maxIndex = 0;
+    int minIndex = 0;
+    int chunkIndex = 0;
+    int startIndex = 0;
     while (num1 > 0)
     {
-        // char *p =(char *)buffer1;
-        int *p = (int *) buffer1;
 
-        for (int i = 0; i < num1; i++)
+        if(chunkIndex == 0)
         {
-            /*
-             **p = '\0';
-             *p = p + sizeof(float);
-             */
-            *p = (*p) & bitsMaskTable[bitsToErase];
-            p = p + 1;
+            startIndex = 256;
+        }
+        else
+        {
+            startIndex = 0;
+        }
+        for (int i = startIndex; i < num1; i++)
+        {
+            if(buffer1[i] > max)
+            {
+                max = buffer1[i];
+                maxIndex = chunkIndex * ITEMS_TO_READ + i;
+            }
+
+            if(buffer1[i] < min)
+            {
+                min = buffer1[i];
+                minIndex = chunkIndex * ITEMS_TO_READ + i;
+            }
         }
 
-        fwrite(buffer1, sizeof(float), num1, outputFile);
+
         num1 = fread(buffer1, sizeof(float), ITEMS_TO_READ, inputFile);
+        chunkIndex ++;
     }
+
+    printf("min = %f, max = %f, minIndex = %d, maxIndex = %d\n", min, max, minIndex, maxIndex);
+
 
     free(buffer1);
     fclose(inputFile);
-    fclose(outputFile);
     return EXIT_SUCCESS;
 }
 

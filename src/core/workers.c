@@ -632,6 +632,18 @@ int run_uncompress(FILE *fin, ctx_t *ctx, mrczip_header_t *hd, FILE *fout, const
 
     chk_size = fsz % chk_size;
 
+    int total_chunks = num;
+
+    //if the file size is smaller than chunk size, then we have only one chunk, then the first chunk flag should be true
+    if(total_chunks == 0)
+    {
+        isFirstChunk = 1;
+    }
+    else
+    {
+        isFirstChunk = 0;
+    }
+
     if (chk_size > 0)
     {
         uncompress_byte_stream(fin, zips, outs, chk_size);
@@ -639,7 +651,7 @@ int run_uncompress(FILE *fin, ctx_t *ctx, mrczip_header_t *hd, FILE *fout, const
         if(strcmp(dataConvertedType, "int") == 0)
         {
             printf("The rest part is treated as int\n");
-            merge_one_byte_to_float_stream(buf, chk_size, outs, 0);
+            merge_one_byte_to_float_stream(buf, chk_size, outs, isFirstChunk);
         }
         else
         {

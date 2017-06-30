@@ -20,3 +20,6 @@ tmp/
 hpos
 nhpos
 mrcviewer
+script/maskdata-middlesize
+script/maskdata-mrc-large
+script/maskdata-mrc-small
