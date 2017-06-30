@@ -13,11 +13,13 @@ MODULE_LIBS_5 = $(subst core,,$(MODULE_LIBS_4))
 
 FINAL_MODULE_LIBS := $(addprefix -l, $(MODULE_LIBS_5))
 CC := gcc
+CC_CPP:= g++
 AR := ar
 OPT_LEVEL = -O0 
 DEBUG_FLAG = -g
 LIBS := -lutil -lcore -lz -lpthread -lm
 #LIBS := -lutil -lcore $(FINAL_MODULE_LIBS)
 CFLAGS := -Wall -std=gnu99 ${OPT_LEVEL} ${DEBUG_FLAG}
+CFLAGS_CPP := -Wall ${OPT_LEVEL} ${DEBUG_FLAG}
 ARFLAGS := -rcs 
 

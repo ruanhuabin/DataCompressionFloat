@@ -168,6 +168,11 @@ int main(int argc, char **argv)
 
 
     mrcInstance.imageData = (float *) malloc(nx * ny * sizeof(float));
+    if (mrcInstance.imageData == NULL)
+    {
+        printf("Memory allocate failed: [%s:%d]\n", __FILE__, __LINE__);
+        exit(-1);
+    }
     for(int i = 0; i < nz; i ++)
     {
         fread(mrcInstance.imageData, sizeof(float), nx * ny, mrcFile);

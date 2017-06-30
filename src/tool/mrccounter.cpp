@@ -14,10 +14,17 @@
  *                                                                 
  *******************************************************************/
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+#include <cmath>
+#include <map>
+#include <string>
+#include <iostream>
+#include <utility>
+#include <algorithm>
+#include <vector>
+using namespace std;
 typedef struct _mrc_header__
 {
     /* Number of columns, rows, and sections */
@@ -150,6 +157,57 @@ void count_freq(float *data, int n, int *freq_info)
     }
 }
 
+
+void count_freq2(float *data, int n , map<string, int> &freq_info)
+{
+    char currValue[16];
+    memset(currValue, '\0', sizeof(currValue));
+    for(int i = 0; i < n; i ++)
+    {
+        snprintf(currValue, 16, "%.2f", data[i]);
+        string strCurrValue = currValue;
+        freq_info[strCurrValue] ++;
+    }
+}
+
+void print_freq_info2(map<string, int> &freq_info)
+{
+
+    map<string, int>::iterator iter = freq_info.begin();
+    for(; iter != freq_info.end(); iter ++)
+    {
+        cout<<iter->first<<":"<<iter->second<<endl;
+    }
+}
+
+void print_freq_info3(vector<pair<string,int> > &freq_info, int totalNumItems)
+{
+
+    static int totalItems = 0;
+    float percent = 0.0f;
+    char percentStr[16];
+    for(size_t i = 0; i < freq_info.size(); i ++)
+    {
+        totalItems += freq_info[i].second;
+
+        percent = (float)freq_info[i].second / (float)totalNumItems;
+        snprintf(percentStr, 16, "%.2f", percent * 100.0);
+        strcat(percentStr, "%\0");
+        cout<<freq_info[i].first<<" : "<<freq_info[i].second<<" ( " << percentStr <<" ) "<<endl;
+    }
+
+    cout<<"Total Items: " << totalItems <<endl;
+    
+}
+
+
+struct CmpByValue {  
+      bool operator()(const pair<string,int> & lhs, const pair<string,int> & rhs)
+      {
+          return lhs.second > rhs.second;
+      }  
+};
+
 int main(int argc, char **argv)
 {
     if (argc != 2)
@@ -175,29 +233,67 @@ int main(int argc, char **argv)
     int nx = mrcInstance.header.nx;
     int ny = mrcInstance.header.ny;
     int nz = mrcInstance.header.nz;
-    mrcInstance.imageData = (float *) malloc(nx * ny * nz * sizeof(float));
 
+    /*
+     *int *freq_info = (int *)malloc(1024 * sizeof(int));
+     */
+
+    map<string, int> freq_info;
+    /*
+     *for(int i = 0; i < 1024; i ++)
+     *{
+     *    freq_info[i] = 0;
+     *}
+     */
+    mrcInstance.imageData = (float *) malloc(nx * ny * sizeof(float));
     if (mrcInstance.imageData == NULL)
     {
         printf("Memory allocate failed: [%s:%d]\n", __FILE__, __LINE__);
         exit(-1);
     }
 
-    fread(mrcInstance.imageData, sizeof(float), nx * ny * nz, mrcFile);
-
-    int *freq_info = (int *)malloc(1024 * sizeof(int));
-    for(int i = 0; i < 1024; i ++)
+    
+    for(int i = 0; i < nz; i ++)
     {
-        freq_info[i] = 0;
+        fread(mrcInstance.imageData, sizeof(float), nx * ny, mrcFile);
+        printf("Start to count frame: %d\n", i);
+        count_freq2(mrcInstance.imageData, nx * ny, freq_info);
     }
-    count_freq(mrcInstance.imageData, nx * ny * nz, freq_info);
 
-    print_freq_info(freq_info, 1024);
 
-    free(freq_info);
+    vector<pair<string,int> > freq_vector(freq_info.begin(),freq_info.end());
+    sort(freq_vector.begin(),freq_vector.end(),CmpByValue());
 
-    //print_mrc_data(mrcInstance.imageData, nx, ny, nz);
+
+    print_freq_info3(freq_vector, nx * ny * nz);
+
+    /*
+     *free(freq_info);
+     */
+    free(mrcInstance.imageData);
     fclose(mrcFile);
     return 0;
+/*
+ *    mrcInstance.imageData = (float *) malloc(nx * ny * nz * sizeof(float));
+ *
+ *    if (mrcInstance.imageData == NULL)
+ *    {
+ *        printf("Memory allocate failed: [%s:%d]\n", __FILE__, __LINE__);
+ *        exit(-1);
+ *    }
+ *
+ *    fread(mrcInstance.imageData, sizeof(float), nx * ny * nz, mrcFile);
+ *
+ *    count_freq(mrcInstance.imageData, nx * ny * nz, freq_info);
+ *
+ *    print_freq_info(freq_info, 1024);
+ *
+ *    free(freq_info);
+ *
+ *    free(mrcInstance.imageData);
+ *    //print_mrc_data(mrcInstance.imageData, nx, ny, nz);
+ *    fclose(mrcFile);
+ *    return 0;
+ */
 }
 
