@@ -180,10 +180,10 @@ void print_freq_info2(map<string, int> &freq_info)
     }
 }
 
-void print_freq_info3(vector<pair<string,int> > &freq_info, int totalNumItems)
+void print_freq_info3(vector<pair<string,int> > &freq_info, size_t totalNumItems)
 {
 
-    static int totalItems = 0;
+    static size_t totalItems = 0;
     float percent = 0.0f;
     char percentStr[16];
     for(size_t i = 0; i < freq_info.size(); i ++)
@@ -230,9 +230,9 @@ int main(int argc, char **argv)
     mrc_fmt_t mrcInstance;
     fread(&mrcInstance.header, sizeof(mrc_header_t), 1, mrcFile);
     print_mrc_header(&mrcInstance.header);
-    int nx = mrcInstance.header.nx;
-    int ny = mrcInstance.header.ny;
-    int nz = mrcInstance.header.nz;
+    size_t nx = mrcInstance.header.nx;
+    size_t ny = mrcInstance.header.ny;
+    size_t nz = mrcInstance.header.nz;
 
     /*
      *int *freq_info = (int *)malloc(1024 * sizeof(int));
@@ -253,10 +253,11 @@ int main(int argc, char **argv)
     }
 
     
-    for(int i = 0; i < nz; i ++)
+    nz = 10;
+    for(size_t i = 0; i < nz; i ++)
     {
         fread(mrcInstance.imageData, sizeof(float), nx * ny, mrcFile);
-        printf("Start to count frame: %d\n", i);
+        printf("Start to count frame: %ld\n", i);
         count_freq2(mrcInstance.imageData, nx * ny, freq_info);
     }
 
